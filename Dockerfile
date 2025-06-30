@@ -1,24 +1,29 @@
-# Install dependencies only when needed
+# Base dependencies
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 RUN npm audit fix --force || true
 
-# Rebuild the Prisma client
-FROM deps AS prisma
+# Build app
+FROM deps AS builder
+COPY . .
+COPY --from=deps /app/node_modules ./node_modules
+
+# Generate Prisma client
 COPY prisma ./prisma/
 RUN npx prisma generate
 
-# Build the app
-FROM deps AS builder
-COPY . .
+# .env file is already copied from COPY . . above
+# Build the application
 RUN npm run build
 
-# Production image, copy all the files and run next
+# Production
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+# Install curl for healthcheck
+RUN apk add --no-cache curl
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
@@ -27,5 +32,14 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/.env ./.env
 
+# Environment variables will be provided at runtime
+ENV NODE_ENV=production
+ENV PORT=4000
+
 EXPOSE 4000
-CMD ["npm", "start"] 
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:4000/api/health || exit 1
+
+CMD ["npm", "start"]

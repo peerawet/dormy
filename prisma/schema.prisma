@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows"]
 }
 
 datasource db {
@@ -13,4 +14,63 @@ model User {
   password String
   name     String
   phone    String
+  address  String?
+  idCard   String?
+  promptpay String?
+  dormitories Dormitory[]
+}
+
+model Dormitory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  address   String
+  ownerId   Int
+  owner     User     @relation(fields: [ownerId], references: [id])
+  rooms     Room[]
+}
+
+model Room {
+  id           Int        @id @default(autoincrement())
+  name         String
+  price        Int
+  dormitoryId  Int
+  dormitory    Dormitory  @relation(fields: [dormitoryId], references: [id])
+  rentalContracts RentalContract[]
+  waterRate    Int?
+  electricRate Int?
+  waterFlat    Int?
+  electricFlat Int?
+  commonFee    Int?
+  otherFee     Int?
+  bills        Bill[]
+}
+
+model RentalContract {
+  id         Int      @id @default(autoincrement())
+  tenantAddress String
+  startDate  DateTime
+  endDate    DateTime
+  tenantName String
+  tenantPhone String
+  tenantIdCard String?
+  roomId     Int
+  room       Room     @relation(fields: [roomId], references: [id])
+}
+
+model Bill {
+  id        Int      @id @default(autoincrement())
+  billDate  DateTime
+  tenantName String
+  water     Int
+  electric  Int
+  common    Int
+  other     Int      @default(0)
+  rent      Int
+  total     Int
+  meterWaterStart   Int?
+  meterWaterEnd     Int?
+  meterElectricStart Int?
+  meterElectricEnd   Int?
+  roomId    Int
+  room      Room     @relation(fields: [roomId], references: [id])
 }

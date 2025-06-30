@@ -1,10 +1,9 @@
-import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
-  const prisma = new PrismaClient();
-  const { name, phone, email, password } = await req.json();
+  const { name, phone, email, password, promptpay } = await req.json();
   if (!name || !phone || !email || !password) {
     return NextResponse.json(
       { success: false, message: "กรุณากรอกข้อมูลให้ครบถ้วน" },
@@ -20,7 +19,13 @@ export async function POST(req: Request) {
   }
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
-    data: { name, phone, email, password: hashedPassword },
+    data: {
+      name,
+      phone,
+      email,
+      password: hashedPassword,
+      promptpay: promptpay || null,
+    },
   });
   return NextResponse.json({
     success: true,
