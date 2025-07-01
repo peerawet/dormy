@@ -106,13 +106,13 @@ export async function POST(req: Request) {
     data: {
       dormitoryId: Number(dormitoryId),
       name,
-      price,
-      waterRate,
-      electricRate,
-      waterFlat,
-      electricFlat,
-      commonFee,
-      otherFee,
+      price: Number(price),
+      waterRate: waterRate ? parseFloat(waterRate) : null,
+      electricRate: electricRate ? parseFloat(electricRate) : null,
+      waterFlat: waterFlat ? Number(waterFlat) : null,
+      electricFlat: electricFlat ? Number(electricFlat) : null,
+      commonFee: commonFee ? Number(commonFee) : null,
+      otherFee: otherFee ? Number(otherFee) : null,
     },
   });
   return NextResponse.json({ success: true, room });
@@ -155,13 +155,13 @@ export async function PUT(req: Request) {
     where: { id: Number(id), dormitoryId: Number(dormitoryId) },
     data: {
       name,
-      price,
-      waterRate,
-      electricRate,
-      waterFlat,
-      electricFlat,
-      commonFee,
-      otherFee,
+      price: Number(price),
+      waterRate: waterRate ? parseFloat(waterRate) : null,
+      electricRate: electricRate ? parseFloat(electricRate) : null,
+      waterFlat: waterFlat ? Number(waterFlat) : null,
+      electricFlat: electricFlat ? Number(electricFlat) : null,
+      commonFee: commonFee ? Number(commonFee) : null,
+      otherFee: otherFee ? Number(otherFee) : null,
     },
   });
   return NextResponse.json({ success: true, room });

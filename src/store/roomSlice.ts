@@ -5,8 +5,8 @@ interface Room {
   name: string;
   price: number;
   floor?: number;
-  waterRate?: number;
-  electricRate?: number;
+  waterRate?: number; // Float - supports decimal values like 3.50
+  electricRate?: number; // Float - supports decimal values like 4.25
   waterFlat?: number;
   electricFlat?: number;
   commonFee?: number;

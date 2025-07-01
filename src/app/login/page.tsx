@@ -35,7 +35,7 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (data.success) {
-        dispatch(loginSuccess({ token: data.token, user: { email, id: 0 } }));
+        dispatch(loginSuccess({ token: data.token, user: data.user }));
         router.push("/dashboard");
       } else {
         setError(data.message || "Login failed");

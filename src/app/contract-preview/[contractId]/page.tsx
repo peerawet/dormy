@@ -3,192 +3,125 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import jsPDF from "jspdf";
 
 export default function ContractPreviewPage() {
   const params = useParams();
-  const tenantId = params.contractId; // ใช้ contractId เป็น tenantId เพื่อความเข้ากันได้กับ URL เดิม
-  const [tenant, setTenant] = useState<any>(null);
-  const [room, setRoom] = useState<any>(null);
+  const contractId = params.contractId;
+  const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
   const auth = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
-    if (auth.token && tenantId) {
-      fetchTenantData();
+    if (auth.token && contractId) {
+      fetchContractData();
     }
-  }, [auth.token, tenantId]);
+  }, [auth.token, contractId]);
 
-  async function fetchTenantData() {
+  async function fetchContractData() {
     try {
-      // Fetch tenant data
-      const tenantRes = await fetch(`/api/tenant/${tenantId}`, {
+      // Fetch contract data with all related information
+      const contractRes = await fetch(`/api/rental-contract/${contractId}`, {
         headers: { Authorization: `Bearer ${auth.token}` },
       });
-      const tenantData = await tenantRes.json();
+      const contractData = await contractRes.json();
 
-      if (tenantData.success) {
-        setTenant(tenantData.tenant);
-        // ใช้ข้อมูล room ที่มากับ tenant แล้ว
-        setRoom(tenantData.tenant.room);
+      if (contractData.success) {
+        setContract(contractData.contract);
       }
     } catch (error) {
-      console.error("Error fetching tenant data:", error);
+      console.error("Error fetching contract data:", error);
     } finally {
       setLoading(false);
     }
   }
 
-  function exportToPDF() {
-    if (!tenant || !room) return;
+  function handlePrint() {
+    window.print();
+  }
 
-    const pdf = new jsPDF();
+  function handleDoubleClick(field: string, currentValue: string) {
+    setEditMode(field);
+    setEditValue(currentValue || "");
+  }
 
-    // เพิ่ม font สำหรับภาษาไทย
-    pdf.setFont("helvetica", "normal");
+  function handleEditSave(field: string) {
+    // Update the contract data locally
+    const fieldParts = field.split(".");
+    let updatedContract = { ...contract };
 
-    // หัวข้อสัญญา
-    pdf.setFontSize(20);
-    pdf.text("สัญญาเช่าห้องพัก", 105, 20, { align: "center" });
-
-    // ข้อมูลสัญญา
-    pdf.setFontSize(12);
-    let yPos = 40;
-
-    pdf.text(`หอพัก: ${room?.dormitory?.name || "N/A"}`, 20, yPos);
-    yPos += 10;
-    pdf.text(`ชื่อห้อง: ${room?.name || "N/A"}`, 20, yPos);
-    yPos += 10;
-    pdf.text(`ที่อยู่หอพัก: ${room?.dormitory?.address || "N/A"}`, 20, yPos);
-    yPos += 20;
-
-    // ข้อมูลผู้ให้เช่า
-    pdf.text("ข้อมูลผู้ให้เช่า:", 20, yPos);
-    yPos += 10;
-    pdf.text(`ชื่อ: ${room?.dormitory?.owner?.name || "-"}`, 20, yPos);
-    yPos += 10;
-    pdf.text(
-      `เลขบัตรประชาชน: ${room?.dormitory?.owner?.idCard || "-"}`,
-      20,
-      yPos
-    );
-    yPos += 10;
-    pdf.text(
-      `เบอร์โทรศัพท์: ${room?.dormitory?.owner?.phone || "-"}`,
-      20,
-      yPos
-    );
-    yPos += 10;
-    pdf.text(`ที่อยู่: ${room?.dormitory?.owner?.address || "-"}`, 20, yPos);
-    yPos += 20;
-
-    // ข้อมูลผู้เช่า
-    pdf.text("ข้อมูลผู้เช่า:", 20, yPos);
-    yPos += 10;
-    pdf.text(`ชื่อ: ${tenant.name}`, 20, yPos);
-    yPos += 10;
-    pdf.text(`เลขบัตรประชาชน: ${tenant.idCard || "-"}`, 20, yPos);
-    yPos += 10;
-    pdf.text(`เบอร์โทรศัพท์: ${tenant.phone}`, 20, yPos);
-    yPos += 10;
-    pdf.text(`ที่อยู่: ${tenant.address}`, 20, yPos);
-    yPos += 20;
-
-    // ข้อมูลสัญญา
-    pdf.text("ข้อมูลสัญญา:", 20, yPos);
-    yPos += 10;
-    pdf.text(
-      `วันที่เริ่มสัญญา: ${new Date(tenant.startDate).toLocaleDateString(
-        "th-TH"
-      )}`,
-      20,
-      yPos
-    );
-    yPos += 10;
-    pdf.text(
-      `วันที่สิ้นสุดสัญญา: ${new Date(tenant.endDate).toLocaleDateString(
-        "th-TH"
-      )}`,
-      20,
-      yPos
-    );
-    yPos += 20;
-
-    // ค่าใช้จ่าย
-    if (room) {
-      pdf.text("ค่าใช้จ่าย:", 20, yPos);
-      yPos += 10;
-      pdf.text(
-        `ค่าเช่าห้อง: ${room.price?.toLocaleString() || "0"} บาท/เดือน`,
-        20,
-        yPos
-      );
-      yPos += 10;
-      if (room.waterFlat && room.waterFlat > 0) {
-        pdf.text(
-          `ค่าน้ำ (รายเดือน): ${room.waterFlat?.toLocaleString() || "0"} บาท`,
-          20,
-          yPos
-        );
-        yPos += 10;
-      }
-      if (room.waterRate && room.waterRate > 0) {
-        pdf.text(
-          `ค่าน้ำ (ต่อหน่วย): ${
-            room.waterRate?.toLocaleString() || "0"
-          } บาท/หน่วย`,
-          20,
-          yPos
-        );
-        yPos += 10;
-      }
-      if (room.electricFlat && room.electricFlat > 0) {
-        pdf.text(
-          `ค่าไฟ (รายเดือน): ${room.electricFlat?.toLocaleString() || "0"} บาท`,
-          20,
-          yPos
-        );
-        yPos += 10;
-      }
-      if (room.electricRate && room.electricRate > 0) {
-        pdf.text(
-          `ค่าไฟ (ต่อหน่วย): ${
-            room.electricRate?.toLocaleString() || "0"
-          } บาท/หน่วย`,
-          20,
-          yPos
-        );
-        yPos += 10;
-      }
-      if (room.commonFee && room.commonFee > 0) {
-        pdf.text(
-          `ค่าส่วนกลาง: ${room.commonFee?.toLocaleString() || "0"} บาท/เดือน`,
-          20,
-          yPos
-        );
-        yPos += 10;
-      }
-      if (room.otherFee && room.otherFee > 0) {
-        pdf.text(
-          `ค่าใช้จ่ายอื่นๆ: ${
-            room.otherFee?.toLocaleString() || "0"
-          } บาท/เดือน`,
-          20,
-          yPos
-        );
-        yPos += 10;
-      }
+    if (fieldParts.length === 1) {
+      updatedContract[fieldParts[0]] = editValue;
+    } else if (fieldParts.length === 2) {
+      updatedContract[fieldParts[0]] = {
+        ...updatedContract[fieldParts[0]],
+        [fieldParts[1]]: editValue,
+      };
+    } else if (fieldParts.length === 3) {
+      updatedContract[fieldParts[0]][fieldParts[1]] = {
+        ...updatedContract[fieldParts[0]][fieldParts[1]],
+        [fieldParts[2]]: editValue,
+      };
     }
 
-    yPos += 20;
-    pdf.text("ผู้ให้เช่า: ____________________", 20, yPos);
-    pdf.text("ผู้เช่า: ____________________", 120, yPos);
+    setContract(updatedContract);
+    setEditMode(null);
+    setEditValue("");
+  }
 
-    yPos += 20;
-    pdf.text(`วันที่: ${new Date().toLocaleDateString("th-TH")}`, 20, yPos);
+  function handleEditCancel() {
+    setEditMode(null);
+    setEditValue("");
+  }
 
-    // ดาวน์โหลด PDF
-    pdf.save(`สัญญาเช่า_${tenant.name}_${room?.id || "N/A"}.pdf`);
+  function renderSectionHeader(title: string, icon: string) {
+    return (
+      <div className="mb-6 print:mb-4">
+        <div className="ml-4 mb-3 print:mb-2">
+          <span className="text-gray-700 font-semibold print:text-base">
+            {icon} {title}
+          </span>
+        </div>
+        <div className="h-px bg-gradient-to-r from-gray-400 via-gray-300 to-transparent"></div>
+      </div>
+    );
+  }
+
+  function renderEditableField(
+    label: string,
+    value: string,
+    field: string,
+    className: string = ""
+  ) {
+    const isEditing = editMode === field;
+
+    return (
+      <p className={`print:text-sm ${className}`}>
+        <span className="font-medium">{label}:</span>{" "}
+        {isEditing ? (
+          <input
+            type="text"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={() => handleEditSave(field)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleEditSave(field);
+              if (e.key === "Escape") handleEditCancel();
+            }}
+            className="border-b border-dotted border-gray-400 px-2 py-1 bg-transparent focus:outline-none focus:border-blue-500"
+            autoFocus
+          />
+        ) : (
+          <span
+            className="border-b border-dotted border-gray-400 px-2 py-1 cursor-pointer hover:bg-gray-100 print:hover:bg-transparent"
+            onDoubleClick={() => handleDoubleClick(field, value)}
+          >
+            {value || "_______________"}
+          </span>
+        )}
+      </p>
+    );
   }
 
   if (loading) {
@@ -202,11 +135,11 @@ export default function ContractPreviewPage() {
     );
   }
 
-  if (!tenant || !room) {
+  if (!contract) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 text-lg">ไม่พบข้อมูลผู้เช่า</p>
+          <p className="text-red-600 text-lg">ไม่พบข้อมูลสัญญาเช่า</p>
           <button
             onClick={() => window.close()}
             className="mt-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
@@ -218,261 +151,537 @@ export default function ContractPreviewPage() {
     );
   }
 
+  const { tenant, room } = contract;
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 py-8 print:py-0 print:bg-white">
+      <div className="max-w-4xl mx-auto print:max-w-none">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              📋 ตัวอย่างสัญญาเช่า
-            </h1>
-            <div className="flex gap-3">
-              <button
-                onClick={exportToPDF}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-              >
-                📄 Export PDF
-              </button>
-              <button
-                onClick={() => window.close()}
-                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
-                ปิด
-              </button>
-            </div>
+        <div className="mb-6 text-center print:hidden">
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={handlePrint}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+            >
+              🖨️ ปริ้น
+            </button>
+            <button
+              onClick={() => window.close()}
+              className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            >
+              ปิด
+            </button>
           </div>
         </div>
 
         {/* Contract Preview */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800">
+        <div className="bg-white shadow-xl rounded-lg overflow-hidden print:shadow-none print:rounded-none">
+          <div className="bg-blue-600 text-white p-6 text-center print:p-4">
+            <h1 className="text-3xl font-bold print:text-xl">
               สัญญาเช่าห้องพัก
-            </h2>
+            </h1>
           </div>
 
-          {/* Room Info */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">
-              ข้อมูลห้องพัก
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="font-medium text-gray-600">หอพัก:</span>
-                <span className="ml-2 text-gray-800">
-                  {room.dormitory?.name}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">ชื่อห้อง:</span>
-                <span className="ml-2 text-gray-800">{room.name}</span>
-              </div>
-              <div className="md:col-span-2">
-                <span className="font-medium text-gray-600">ที่อยู่หอพัก:</span>
-                <span className="ml-2 text-gray-800">
-                  {room.dormitory?.address}
-                </span>
+          <div className="p-8 print:p-4">
+            {/* Contract Details */}
+            <div className="mb-8 print:mb-4">
+              <div className="grid grid-cols-1 gap-4 print:gap-2">
+                <div className="text-center">
+                  {renderEditableField(
+                    "สัญญาเลขที่",
+                    contract.id?.toString(),
+                    "id"
+                  )}
+                </div>
+                <div className="text-center">
+                  {renderEditableField(
+                    "เขียนที่",
+                    room.dormitory?.name,
+                    "room.dormitory.name"
+                  )}
+                </div>
+                <div className="text-center">
+                  <p className="print:text-sm">
+                    <span className="font-medium">วันที่</span>{" "}
+                    <span
+                      className="border-b border-dotted border-gray-400 px-2 py-1 cursor-pointer hover:bg-gray-100 print:hover:bg-transparent"
+                      onDoubleClick={() =>
+                        handleDoubleClick(
+                          "contractDate.day",
+                          new Date().getDate().toString()
+                        )
+                      }
+                    >
+                      {editMode === "contractDate.day" ? (
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onBlur={() => handleEditSave("contractDate.day")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              handleEditSave("contractDate.day");
+                            if (e.key === "Escape") handleEditCancel();
+                          }}
+                          className="border-b border-dotted border-gray-400 px-2 py-1 bg-transparent focus:outline-none focus:border-blue-500 w-12"
+                          autoFocus
+                        />
+                      ) : (
+                        new Date().getDate()
+                      )}
+                    </span>{" "}
+                    <span className="font-medium">เดือน</span>{" "}
+                    <span
+                      className="border-b border-dotted border-gray-400 px-2 py-1 cursor-pointer hover:bg-gray-100 print:hover:bg-transparent"
+                      onDoubleClick={() =>
+                        handleDoubleClick(
+                          "contractDate.month",
+                          new Date().toLocaleDateString("th-TH", {
+                            month: "long",
+                          })
+                        )
+                      }
+                    >
+                      {editMode === "contractDate.month" ? (
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onBlur={() => handleEditSave("contractDate.month")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              handleEditSave("contractDate.month");
+                            if (e.key === "Escape") handleEditCancel();
+                          }}
+                          className="border-b border-dotted border-gray-400 px-2 py-1 bg-transparent focus:outline-none focus:border-blue-500 w-20"
+                          autoFocus
+                        />
+                      ) : (
+                        new Date().toLocaleDateString("th-TH", {
+                          month: "long",
+                        })
+                      )}
+                    </span>{" "}
+                    <span className="font-medium">ปี พ.ศ.</span>{" "}
+                    <span
+                      className="border-b border-dotted border-gray-400 px-2 py-1 cursor-pointer hover:bg-gray-100 print:hover:bg-transparent"
+                      onDoubleClick={() =>
+                        handleDoubleClick(
+                          "contractDate.year",
+                          (new Date().getFullYear() + 543).toString()
+                        )
+                      }
+                    >
+                      {editMode === "contractDate.year" ? (
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onBlur={() => handleEditSave("contractDate.year")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              handleEditSave("contractDate.year");
+                            if (e.key === "Escape") handleEditCancel();
+                          }}
+                          className="border-b border-dotted border-gray-400 px-2 py-1 bg-transparent focus:outline-none focus:border-blue-500 w-16"
+                          autoFocus
+                        />
+                      ) : (
+                        new Date().getFullYear() + 543
+                      )}
+                    </span>
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Owner Info */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">
-              ข้อมูลผู้ให้เช่า
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="font-medium text-gray-600">ชื่อ:</span>
-                <span className="ml-2 text-gray-800">
-                  {room.dormitory?.owner?.name || "-"}
-                </span>
+            {/* Room Info */}
+            <div className="mb-12 print:mb-6">
+              {renderSectionHeader("ข้อมูลห้องพัก", "🏠")}
+              <div className="grid grid-cols-2 gap-4 print:gap-2">
+                {renderEditableField(
+                  "หอพัก",
+                  room.dormitory?.name,
+                  "room.dormitory.name"
+                )}
+                {renderEditableField("ชื่อห้อง", room.name, "room.name")}
               </div>
-              <div>
-                <span className="font-medium text-gray-600">
-                  เบอร์โทรศัพท์:
-                </span>
-                <span className="ml-2 text-gray-800">
-                  {room.dormitory?.owner?.phone || "-"}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">
-                  เลขบัตรประชาชน:
-                </span>
-                <span className="ml-2 text-gray-800">
-                  {room.dormitory?.owner?.idCard || "-"}
-                </span>
-              </div>
-              <div className="md:col-span-2">
-                <span className="font-medium text-gray-600">ที่อยู่:</span>
-                <span className="ml-2 text-gray-800">
-                  {room.dormitory?.owner?.address || "-"}
-                </span>
+              <div className="mt-4 print:mt-2">
+                {renderEditableField(
+                  "ที่อยู่หอพัก",
+                  room.dormitory?.address,
+                  "room.dormitory.address"
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Tenant Info */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">
-              ข้อมูลผู้เช่า
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="font-medium text-gray-600">ชื่อ:</span>
-                <span className="ml-2 text-gray-800">{tenant.name}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">
-                  เบอร์โทรศัพท์:
-                </span>
-                <span className="ml-2 text-gray-800">{tenant.phone}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">
-                  เลขบัตรประชาชน:
-                </span>
-                <span className="ml-2 text-gray-800">
-                  {tenant.idCard || "-"}
-                </span>
-              </div>
-              <div className="md:col-span-2">
-                <span className="font-medium text-gray-600">ที่อยู่:</span>
-                <span className="ml-2 text-gray-800">{tenant.address}</span>
+            {/* Owner Info */}
+            <div className="mb-12 print:mb-6">
+              {renderSectionHeader("ข้อมูลผู้ให้เช่า", "👤")}
+              <div className="grid grid-cols-2 gap-4 print:gap-2">
+                {renderEditableField(
+                  "ชื่อ",
+                  room.dormitory?.owner?.name,
+                  "dormitory.owner.name"
+                )}
+                {renderEditableField(
+                  "เบอร์โทรศัพท์",
+                  room.dormitory?.owner?.phone,
+                  "dormitory.owner.phone"
+                )}
+                {renderEditableField(
+                  "เลขบัตรประชาชน",
+                  room.dormitory?.owner?.idCard,
+                  "dormitory.owner.idCard"
+                )}
+                {renderEditableField(
+                  "ที่อยู่",
+                  room.dormitory?.owner?.address,
+                  "dormitory.owner.address"
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Contract Info */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">
-              ข้อมูลสัญญา
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="font-medium text-gray-600">
-                  วันที่เริ่มสัญญา:
-                </span>
-                <span className="ml-2 text-gray-800">
-                  {new Date(tenant.startDate).toLocaleDateString("th-TH")}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">
-                  วันที่สิ้นสุดสัญญา:
-                </span>
-                <span className="ml-2 text-gray-800">
-                  {new Date(tenant.endDate).toLocaleDateString("th-TH")}
-                </span>
+            {/* Tenant Info */}
+            <div className="mb-12 print:mb-6">
+              {renderSectionHeader("ข้อมูลผู้เช่า", "🏃")}
+              <div className="grid grid-cols-2 gap-4 print:gap-2">
+                {renderEditableField("ชื่อ", tenant?.name, "tenant.name")}
+                {renderEditableField(
+                  "เบอร์โทรศัพท์",
+                  tenant?.phone,
+                  "tenant.phone"
+                )}
+                {renderEditableField(
+                  "เลขบัตรประชาชน",
+                  tenant?.idCard,
+                  "tenant.idCard"
+                )}
+                {renderEditableField(
+                  "ที่อยู่",
+                  tenant?.address,
+                  "tenant.address"
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Pricing */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">
-              ค่าใช้จ่าย
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="font-medium text-gray-600">ค่าเช่าห้อง:</span>
-                <span className="ml-2 text-gray-800">
-                  {room.price?.toLocaleString() || "0"} บาท/เดือน
-                </span>
+            {/* Contract Info */}
+            <div className="mb-12 print:mb-6">
+              {renderSectionHeader("ข้อมูลสัญญา", "📋")}
+              <div className="grid grid-cols-2 gap-4 print:gap-2">
+                {renderEditableField(
+                  "วันที่เริ่มสัญญา",
+                  new Date(contract.startDate).toLocaleDateString("th-TH"),
+                  "startDate"
+                )}
+                {renderEditableField(
+                  "วันที่สิ้นสุดสัญญา",
+                  new Date(contract.endDate).toLocaleDateString("th-TH"),
+                  "endDate"
+                )}
               </div>
-              {room.waterFlat && room.waterFlat > 0 && (
-                <div>
-                  <span className="font-medium text-gray-600">
-                    ค่าน้ำ (รายเดือน):
-                  </span>
-                  <span className="ml-2 text-gray-800">
-                    {room.waterFlat?.toLocaleString() || "0"} บาท
-                  </span>
-                </div>
-              )}
-              {room.waterRate && room.waterRate > 0 && (
-                <div>
-                  <span className="font-medium text-gray-600">
-                    ค่าน้ำ (ต่อหน่วย):
-                  </span>
-                  <span className="ml-2 text-gray-800">
-                    {room.waterRate?.toLocaleString() || "0"} บาท/หน่วย
-                  </span>
-                </div>
-              )}
-              {room.electricFlat && room.electricFlat > 0 && (
-                <div>
-                  <span className="font-medium text-gray-600">
-                    ค่าไฟ (รายเดือน):
-                  </span>
-                  <span className="ml-2 text-gray-800">
-                    {room.electricFlat?.toLocaleString() || "0"} บาท
-                  </span>
-                </div>
-              )}
-              {room.electricRate && room.electricRate > 0 && (
-                <div>
-                  <span className="font-medium text-gray-600">
-                    ค่าไฟ (ต่อหน่วย):
-                  </span>
-                  <span className="ml-2 text-gray-800">
-                    {room.electricRate?.toLocaleString() || "0"} บาท/หน่วย
-                  </span>
-                </div>
-              )}
-              {room.commonFee && room.commonFee > 0 && (
-                <div>
-                  <span className="font-medium text-gray-600">
-                    ค่าส่วนกลาง:
-                  </span>
-                  <span className="ml-2 text-gray-800">
-                    {room.commonFee?.toLocaleString() || "0"} บาท/เดือน
-                  </span>
-                </div>
-              )}
-              {room.otherFee && room.otherFee > 0 && (
-                <div>
-                  <span className="font-medium text-gray-600">
-                    ค่าใช้จ่ายอื่นๆ:
-                  </span>
-                  <span className="ml-2 text-gray-800">
-                    {room.otherFee?.toLocaleString() || "0"} บาท/เดือน
-                  </span>
-                </div>
-              )}
             </div>
-          </div>
 
-          {/* Signature */}
-          <div className="border-t pt-8 mt-8">
-            <div className="flex justify-between items-center">
-              <div className="text-center">
-                <div className="mb-4">
-                  <span className="text-gray-600">ผู้ให้เช่า:</span>
-                </div>
-                <div className="border-b border-gray-400 w-48 mx-auto mb-2"></div>
-                <div className="text-sm text-gray-600">
-                  ({room.dormitory?.owner?.name || "-"})
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="mb-4">
-                  <span className="text-gray-600">ผู้เช่า:</span>
-                </div>
-                <div className="border-b border-gray-400 w-48 mx-auto mb-2"></div>
-                <div className="text-sm text-gray-600">({tenant.name})</div>
+            {/* Pricing */}
+            <div className="mb-12 print:mb-6">
+              {renderSectionHeader("ค่าใช้จ่าย", "💰")}
+              <div className="grid grid-cols-2 gap-4 print:gap-2">
+                {renderEditableField(
+                  "🏠 ค่าเช่าห้อง",
+                  `${room.price?.toLocaleString() || "0"} บาท/เดือน`,
+                  "room.price"
+                )}
+                {room.waterFlat &&
+                  room.waterFlat > 0 &&
+                  renderEditableField(
+                    "💧 ค่าน้ำ (รายเดือน)",
+                    `${room.waterFlat?.toLocaleString() || "0"} บาท`,
+                    "room.waterFlat"
+                  )}
+                {room.waterRate &&
+                  room.waterRate > 0 &&
+                  renderEditableField(
+                    "💧 ค่าน้ำ (ต่อหน่วย)",
+                    `${room.waterRate?.toLocaleString() || "0"} บาท/หน่วย`,
+                    "room.waterRate"
+                  )}
+                {room.electricFlat &&
+                  room.electricFlat > 0 &&
+                  renderEditableField(
+                    "⚡ ค่าไฟ (รายเดือน)",
+                    `${room.electricFlat?.toLocaleString() || "0"} บาท`,
+                    "room.electricFlat"
+                  )}
+                {room.electricRate &&
+                  room.electricRate > 0 &&
+                  renderEditableField(
+                    "⚡ ค่าไฟ (ต่อหน่วย)",
+                    `${room.electricRate?.toLocaleString() || "0"} บาท/หน่วย`,
+                    "room.electricRate"
+                  )}
+                {room.commonFee &&
+                  room.commonFee > 0 &&
+                  renderEditableField(
+                    "🏢 ค่าส่วนกลาง",
+                    `${room.commonFee?.toLocaleString() || "0"} บาท/เดือน`,
+                    "room.commonFee"
+                  )}
+                {room.otherFee &&
+                  room.otherFee > 0 &&
+                  renderEditableField(
+                    "📦 ค่าใช้จ่ายอื่นๆ",
+                    `${room.otherFee?.toLocaleString() || "0"} บาท/เดือน`,
+                    "room.otherFee"
+                  )}
               </div>
             </div>
-            <div className="text-center mt-8">
-              <span className="text-gray-600">
-                วันที่: {new Date().toLocaleDateString("th-TH")}
-              </span>
+
+            {/* Signature */}
+            <div className="relative mt-8 print:mt-4">
+              <div className="flex items-center justify-center mb-6 print:mb-4">
+                <div className="flex-grow h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent"></div>
+                <div className="px-4 bg-white">
+                  <span className="text-gray-600 font-medium print:text-sm">
+                    ✍️ ลายมือชื่อ
+                  </span>
+                </div>
+                <div className="flex-grow h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent"></div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4 print:gap-2">
+                <div className="text-center">
+                  <div className="mb-10 print:mb-8">
+                    <span className="text-gray-600 print:text-sm font-medium">
+                      ผู้ให้เช่า:
+                    </span>
+                  </div>
+                  <div className="border-b border-gray-400 w-32 mx-auto mb-3 print:w-24 print:mb-2"></div>
+                  <div className="text-xs text-gray-600 print:text-xs">
+                    (
+                    <span
+                      className="border-b border-dotted border-gray-400 px-1 cursor-pointer hover:bg-gray-100 print:hover:bg-transparent"
+                      onDoubleClick={() =>
+                        handleDoubleClick(
+                          "signature.lessor",
+                          room.dormitory?.owner?.name || ""
+                        )
+                      }
+                    >
+                      {editMode === "signature.lessor" ? (
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onBlur={() => handleEditSave("signature.lessor")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              handleEditSave("signature.lessor");
+                            if (e.key === "Escape") handleEditCancel();
+                          }}
+                          className="border-none bg-transparent focus:outline-none text-xs"
+                          autoFocus
+                        />
+                      ) : (
+                        room.dormitory?.owner?.name || "_______________"
+                      )}
+                    </span>
+                    )
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="mb-10 print:mb-8">
+                    <span className="text-gray-600 print:text-sm font-medium">
+                      ผู้เช่า:
+                    </span>
+                  </div>
+                  <div className="border-b border-gray-400 w-32 mx-auto mb-3 print:w-24 print:mb-2"></div>
+                  <div className="text-xs text-gray-600 print:text-xs">
+                    (
+                    <span
+                      className="border-b border-dotted border-gray-400 px-1 cursor-pointer hover:bg-gray-100 print:hover:bg-transparent"
+                      onDoubleClick={() =>
+                        handleDoubleClick(
+                          "signature.lessee",
+                          tenant?.name || ""
+                        )
+                      }
+                    >
+                      {editMode === "signature.lessee" ? (
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onBlur={() => handleEditSave("signature.lessee")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              handleEditSave("signature.lessee");
+                            if (e.key === "Escape") handleEditCancel();
+                          }}
+                          className="border-none bg-transparent focus:outline-none text-xs"
+                          autoFocus
+                        />
+                      ) : (
+                        tenant?.name || "_______________"
+                      )}
+                    </span>
+                    )
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="mb-10 print:mb-8">
+                    <span className="text-gray-600 print:text-sm font-medium">
+                      พยาน 1:
+                    </span>
+                  </div>
+                  <div className="border-b border-gray-400 w-32 mx-auto mb-3 print:w-24 print:mb-2"></div>
+                  <div className="text-xs text-gray-600 print:text-xs">
+                    (
+                    <span
+                      className="border-b border-dotted border-gray-400 px-1 cursor-pointer hover:bg-gray-100 print:hover:bg-transparent"
+                      onDoubleClick={() =>
+                        handleDoubleClick("signature.witness1", "")
+                      }
+                    >
+                      {editMode === "signature.witness1" ? (
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onBlur={() => handleEditSave("signature.witness1")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              handleEditSave("signature.witness1");
+                            if (e.key === "Escape") handleEditCancel();
+                          }}
+                          className="border-none bg-transparent focus:outline-none text-xs"
+                          autoFocus
+                        />
+                      ) : (
+                        "_______________"
+                      )}
+                    </span>
+                    )
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="mb-10 print:mb-8">
+                    <span className="text-gray-600 print:text-sm font-medium">
+                      พยาน 2:
+                    </span>
+                  </div>
+                  <div className="border-b border-gray-400 w-32 mx-auto mb-3 print:w-24 print:mb-2"></div>
+                  <div className="text-xs text-gray-600 print:text-xs">
+                    (
+                    <span
+                      className="border-b border-dotted border-gray-400 px-1 cursor-pointer hover:bg-gray-100 print:hover:bg-transparent"
+                      onDoubleClick={() =>
+                        handleDoubleClick("signature.witness2", "")
+                      }
+                    >
+                      {editMode === "signature.witness2" ? (
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onBlur={() => handleEditSave("signature.witness2")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              handleEditSave("signature.witness2");
+                            if (e.key === "Escape") handleEditCancel();
+                          }}
+                          className="border-none bg-transparent focus:outline-none text-xs"
+                          autoFocus
+                        />
+                      ) : (
+                        "_______________"
+                      )}
+                    </span>
+                    )
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        @media print {
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 7px !important;
+          }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          .print\\:hidden {
+            display: none !important;
+          }
+          .print\\:shadow-none {
+            box-shadow: none !important;
+          }
+          .print\\:rounded-none {
+            border-radius: 0 !important;
+          }
+          .print\\:py-0 {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+          }
+          .print\\:bg-white {
+            background-color: white !important;
+          }
+          .print\\:max-w-none {
+            max-width: none !important;
+          }
+          .print\\:p-4 {
+            padding: 0.5rem !important;
+          }
+          .print\\:p-2 {
+            padding: 0.125rem !important;
+          }
+          .print\\:text-xl {
+            font-size: 0.875rem !important;
+          }
+          .print\\:text-lg {
+            font-size: 0.75rem !important;
+          }
+          .print\\:text-base {
+            font-size: 0.625rem !important;
+          }
+          .print\\:text-sm {
+            font-size: 0.5rem !important;
+          }
+          .print\\:mb-4 {
+            margin-bottom: 0.5rem !important;
+          }
+          .print\\:mb-2 {
+            margin-bottom: 0.25rem !important;
+          }
+          .print\\:mb-1 {
+            margin-bottom: 0.125rem !important;
+          }
+          .print\\:pb-1 {
+            padding-bottom: 0.125rem !important;
+          }
+          .print\\:space-y-2 > * + * {
+            margin-top: 0.25rem !important;
+          }
+          .print\\:space-y-1 > * + * {
+            margin-top: 0.125rem !important;
+          }
+          .print\\:gap-4 {
+            gap: 0.5rem !important;
+          }
+          .print\\:gap-2 {
+            gap: 0.25rem !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

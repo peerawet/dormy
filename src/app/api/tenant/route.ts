@@ -308,17 +308,72 @@ export async function DELETE(req: Request) {
       { status: 400 }
     );
 
-  // ตรวจสอบว่า tenant มีอยู่จริง
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: Number(id) },
+  // ตรวจสอบว่า tenant มีอยู่จริงและเป็นของ user นี้
+  const tenant = await prisma.tenant.findFirst({
+    where: {
+      id: Number(id),
+      rooms: {
+        some: {
+          room: {
+            dormitory: {
+              ownerId: userId,
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!tenant)
     return NextResponse.json(
-      { success: false, message: "ไม่พบผู้เช่า" },
+      { success: false, message: "ไม่พบผู้เช่าหรือไม่มีสิทธิ์ลบ" },
       { status: 404 }
     );
 
-  await prisma.tenant.delete({ where: { id: Number(id) } });
-  return NextResponse.json({ success: true });
+  // ใช้ transaction เพื่อลบข้อมูลที่เกี่ยวข้องทั้งหมด
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 1. ลบ Bills ที่เกี่ยวข้อง
+      await tx.bill.deleteMany({
+        where: {
+          tenantId: Number(id),
+        },
+      });
+
+      // 2. ลบ RentalContracts ที่เกี่ยวข้อง
+      await tx.rentalContract.deleteMany({
+        where: {
+          tenantId: Number(id),
+        },
+      });
+
+      // 3. ลบ TenantRoom relationships
+      await tx.tenantRoom.deleteMany({
+        where: {
+          tenantId: Number(id),
+        },
+      });
+
+      // 4. ลบ Tenant
+      await tx.tenant.delete({
+        where: {
+          id: Number(id),
+        },
+      });
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "ลบผู้เช่าและข้อมูลที่เกี่ยวข้องเรียบร้อยแล้ว",
+    });
+  } catch (error) {
+    console.error("Error deleting tenant:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "เกิดข้อผิดพลาดในการลบผู้เช่า",
+      },
+      { status: 500 }
+    );
+  }
 }

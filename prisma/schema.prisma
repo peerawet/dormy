@@ -35,8 +35,8 @@ model Room {
   price        Int
   dormitoryId  Int
   dormitory    Dormitory  @relation(fields: [dormitoryId], references: [id])
-  waterRate    Int?
-  electricRate Int?
+  waterRate    Float?
+  electricRate Float?
   waterFlat    Int?
   electricFlat Int?
   commonFee    Int?

@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
 import BillModal from "@/app/components/BillModal";
 import ConfirmDeleteModal from "@/app/components/ConfirmDeleteModal";
+import ImportExcelModal from "@/app/components/ImportExcelModal";
 import {
   fetchBills,
   addBill,
@@ -21,6 +22,7 @@ export default function BillTab({
   room: any;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [editBill, setEditBill] = useState<any | null>(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [billToDelete, setBillToDelete] = useState<any>(null);
@@ -97,6 +99,37 @@ export default function BillTab({
     }
   }
 
+  async function handleBulkImport(bills: any[]) {
+    if (!auth.token) return;
+
+    try {
+      const response = await fetch("/api/bill/bulk", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify({ bills }),
+      });
+
+      const result = await response.json();
+
+      setImportModalOpen(false);
+
+      if (result.success) {
+        alert(result.message);
+        // Refresh bills data
+        dispatch(fetchBills({ roomId, token: auth.token }));
+      } else {
+        alert(`เกิดข้อผิดพลาด: ${result.message}`);
+      }
+    } catch (error: any) {
+      console.error("Error in bulk import:", error);
+      alert(`เกิดข้อผิดพลาดในการ Import: ${error.message || error}`);
+      setImportModalOpen(false);
+    }
+  }
+
   const handleEditBill = (bill: any) => {
     setEditBill(bill);
     setModalOpen(true);
@@ -132,20 +165,28 @@ export default function BillTab({
   }, [auth.token, roomId, dispatch]);
 
   return (
-    <div className="bg-white rounded-xl shadow-xl p-0 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-xl p-0 overflow-visible">
       <div className="bg-blue-50 px-6 py-4 border-b flex items-center justify-between">
         <h3 className="font-bold text-lg text-blue-900 flex items-center gap-2">
           <span>💸</span> บิลค่าเช่า
         </h3>
-        <button
-          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-          onClick={() => {
-            setEditBill(null);
-            setModalOpen(true);
-          }}
-        >
-          + เพิ่มบิล
-        </button>
+        <div className="flex gap-2">
+          <button
+            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
+            onClick={() => setImportModalOpen(true)}
+          >
+            📊 Import Excel
+          </button>
+          <button
+            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => {
+              setEditBill(null);
+              setModalOpen(true);
+            }}
+          >
+            + เพิ่มบิล
+          </button>
+        </div>
       </div>
       <BillModal
         open={modalOpen}
@@ -160,6 +201,15 @@ export default function BillTab({
         bills={bills}
         editBill={editBill}
         autoSelectTenant={tenants.length === 1}
+      />
+
+      <ImportExcelModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImport={handleBulkImport}
+        loading={loading}
+        tenants={tenants}
+        roomId={roomId}
       />
 
       <ConfirmDeleteModal
@@ -181,8 +231,8 @@ export default function BillTab({
         ) : bills.length === 0 ? (
           <div className="text-center text-gray-500">ยังไม่มีบิล</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-max text-left border border-blue-100 rounded-xl overflow-hidden text-sm">
+          <div className="overflow-x-auto overflow-hidden rounded-xl">
+            <table className="w-full min-w-max text-left border border-blue-100 text-sm">
               <thead>
                 <tr className="bg-blue-100 text-blue-900">
                   <th className="p-3 font-semibold whitespace-nowrap">
@@ -251,6 +301,14 @@ export default function BillTab({
                     </td>
                     <td className="p-3 whitespace-nowrap">
                       <div className="flex gap-2">
+                        <button
+                          className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200"
+                          onClick={() =>
+                            window.open(`/bill-receipt/${b.id}`, "_blank")
+                          }
+                        >
+                          📄 บิล
+                        </button>
                         <button
                           className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs hover:bg-yellow-200"
                           onClick={() => handleEditBill(b)}

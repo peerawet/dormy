@@ -16,6 +16,63 @@ function getUserIdFromAuth(req: Request) {
   }
 }
 
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const userId = getUserIdFromAuth(req);
+  if (!userId)
+    return NextResponse.json(
+      { success: false, message: "Unauthorized" },
+      { status: 401 }
+    );
+
+  const billId = Number(id);
+
+  // ดึงข้อมูล bill พร้อมข้อมูลที่เกี่ยวข้องสำหรับใบเสร็จ
+  const bill = await prisma.bill.findUnique({
+    where: { id: billId },
+    include: {
+      tenant: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          idCard: true,
+        },
+      },
+      room: {
+        include: {
+          dormitory: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+              ownerId: true,
+              owner: {
+                select: {
+                  name: true,
+                  phone: true,
+                  promptpay: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!bill || (bill as any).room?.dormitory?.ownerId !== userId)
+    return NextResponse.json(
+      { success: false, message: "Unauthorized" },
+      { status: 401 }
+    );
+
+  return NextResponse.json({ success: true, bill });
+}
+
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -133,7 +190,7 @@ export async function DELETE(
     },
   });
 
-  if (!bill || bill.room.dormitory.ownerId !== userId)
+  if (!bill || (bill as any).room?.dormitory?.ownerId !== userId)
     return NextResponse.json(
       { success: false, message: "Unauthorized" },
       { status: 401 }

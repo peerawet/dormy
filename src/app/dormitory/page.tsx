@@ -445,7 +445,7 @@ export default function DormitoryPage() {
                                       ค่าน้ำ/หน่วย
                                     </span>
                                     <span className="text-sm text-gray-700">
-                                      ฿{room.waterRate}
+                                      ฿{Number(room.waterRate).toFixed(2)}
                                     </span>
                                   </div>
                                 )}
@@ -456,7 +456,7 @@ export default function DormitoryPage() {
                                       ค่าไฟ/หน่วย
                                     </span>
                                     <span className="text-sm text-gray-700">
-                                      ฿{room.electricRate}
+                                      ฿{Number(room.electricRate).toFixed(2)}
                                     </span>
                                   </div>
                                 )}

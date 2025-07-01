@@ -228,8 +228,8 @@ export default function RoomDetailPage() {
                         </div>
                         <div className="text-xl font-bold text-blue-800">
                           {room.waterFlat
-                            ? `฿${room.waterFlat}`
-                            : `฿${room.waterRate}/หน่วย`}
+                            ? `฿${room.waterFlat.toLocaleString()}`
+                            : `฿${Number(room.waterRate).toFixed(2)}/หน่วย`}
                         </div>
                       </div>
                     </div>
@@ -252,8 +252,8 @@ export default function RoomDetailPage() {
                         </div>
                         <div className="text-xl font-bold text-yellow-800">
                           {room.electricFlat
-                            ? `฿${room.electricFlat}`
-                            : `฿${room.electricRate}/หน่วย`}
+                            ? `฿${room.electricFlat.toLocaleString()}`
+                            : `฿${Number(room.electricRate).toFixed(2)}/หน่วย`}
                         </div>
                       </div>
                     </div>

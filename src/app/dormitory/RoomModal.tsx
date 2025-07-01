@@ -433,7 +433,7 @@ export default function RoomModal({
                         <div className="flex justify-between">
                           <span>ค่าน้ำต่อหน่วย:</span>
                           <span>
-                            ฿{Number(form.waterRate).toLocaleString()}/หน่วย
+                            ฿{Number(form.waterRate).toFixed(2)}/หน่วย
                           </span>
                         </div>
                       )}
@@ -441,7 +441,7 @@ export default function RoomModal({
                         <div className="flex justify-between">
                           <span>ค่าไฟต่อหน่วย:</span>
                           <span>
-                            ฿{Number(form.electricRate).toLocaleString()}/หน่วย
+                            ฿{Number(form.electricRate).toFixed(2)}/หน่วย
                           </span>
                         </div>
                       )}
