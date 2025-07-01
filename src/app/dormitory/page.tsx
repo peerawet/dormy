@@ -1,13 +1,13 @@
 "use client";
-import Navbar from "../components/Navbar";
-import ProtectedRoute from "../components/ProtectedRoute";
+import Navbar from "@/app/components/Navbar";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "../../store";
+import { RootState, AppDispatch } from "@/store";
 import Link from "next/link";
 import DormModal from "./DormModal";
 import RoomModal from "./RoomModal";
-import { fetchDorms } from "../../store/dormSlice";
+import { fetchDorms } from "@/store/dormSlice";
 
 export default function DormitoryPage() {
   const dispatch = useDispatch<AppDispatch>();

@@ -1,8 +1,8 @@
 "use client";
-import Navbar from "../components/Navbar";
-import ProtectedRoute from "../components/ProtectedRoute";
+import Navbar from "@/app/components/Navbar";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 import { useSelector } from "react-redux";
-import { RootState } from "../../store";
+import { RootState } from "@/store";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 

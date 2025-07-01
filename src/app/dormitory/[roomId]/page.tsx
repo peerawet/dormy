@@ -2,14 +2,14 @@
 import { useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import Navbar from "../../components/Navbar";
+import Navbar from "@/app/components/Navbar";
 import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "../../../store";
+import { RootState, AppDispatch } from "@/store";
 import {
   fetchRoomDetail,
   setActiveTab,
   clearRoomData,
-} from "../../../store/roomSlice";
+} from "@/store/roomSlice";
 import ContractTab from "./ContractTab";
 import BillTab from "./BillTab";
 

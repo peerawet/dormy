@@ -1,16 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "../../../store";
+import { RootState, AppDispatch } from "@/store";
 import {
   fetchContracts,
   addContract,
   updateContract,
   deleteContract,
   clearContracts,
-} from "../../../store/rentalContractSlice";
-import { ContractModal } from "../../components/ContractModal";
-import ConfirmDeleteModal from "../../components/ConfirmDeleteModal";
+} from "@/store/rentalContractSlice";
+import { ContractModal } from "@/app/components/ContractModal";
+import ConfirmDeleteModal from "@/app/components/ConfirmDeleteModal";
 
 // ฟังก์ชันเปิดหน้า preview สัญญาเช่าใน tab ใหม่
 function openContractPreview(contractId: number) {

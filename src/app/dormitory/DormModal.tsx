@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useDispatch } from "react-redux";
-import { AppDispatch } from "../../store";
-import { addDorm, editDorm, deleteDorm } from "../../store/dormSlice";
-import ValidatedInput from "../components/ValidatedInput";
+import { AppDispatch } from "@/store";
+import { addDorm, editDorm, deleteDorm } from "@/store/dormSlice";
+import ValidatedInput from "@/app/components/ValidatedInput";
 import {
   validators,
   validateForm,
@@ -296,7 +296,7 @@ export default function DormModal({
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
               onClick={handleSave}
-              disabled={loading || success || (!isFormValid && hasSubmitted)}
+              disabled={loading || !!success || (!isFormValid && hasSubmitted)}
             >
               {loading ? (
                 <>

@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "../../store";
-import Navbar from "../components/Navbar";
-import ProtectedRoute from "../components/ProtectedRoute";
-import ValidatedInput from "../components/ValidatedInput";
-import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
+import { RootState, AppDispatch } from "@/store";
+import Navbar from "@/app/components/Navbar";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
+import ValidatedInput from "@/app/components/ValidatedInput";
+import ConfirmDeleteModal from "@/app/components/ConfirmDeleteModal";
 import { createPortal } from "react-dom";
 import {
   validators,
@@ -20,7 +20,7 @@ import {
   deleteTenant,
   clearError,
   clearTenants,
-} from "../../store/tenantSlice";
+} from "@/store/tenantSlice";
 
 // Interfaces are now imported from tenantSlice
 type Tenant = {

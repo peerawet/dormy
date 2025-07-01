@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ValidationResult } from "../../utils/validation";
+import { ValidationResult } from "@/utils/validation";
 
 interface ValidatedInputProps {
   label: string;

@@ -2,8 +2,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useSelector } from "react-redux";
-import { RootState } from "../../../store";
-import ValidatedInput from "../../components/ValidatedInput";
+import { RootState } from "@/store";
+import ValidatedInput from "@/app/components/ValidatedInput";
 import {
   validators,
   validateForm,

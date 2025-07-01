@@ -1,10 +1,10 @@
 "use client";
-import Navbar from "../components/Navbar";
+import Navbar from "@/app/components/Navbar";
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
-import { loginStart, loginSuccess, loginFailure } from "../../store/authSlice";
-import { RootState } from "../../store";
+import { loginStart, loginSuccess, loginFailure } from "@/store/authSlice";
+import { RootState } from "@/store";
 import Link from "next/link";
 
 export default function LoginPage() {

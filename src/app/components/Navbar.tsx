@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "../../store";
-import { logout } from "../../store/authSlice";
+import { RootState } from "@/store";
+import { logout } from "@/store/authSlice";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ProfileModal from "./ProfileModal";

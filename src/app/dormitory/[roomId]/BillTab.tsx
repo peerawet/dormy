@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "../../../store";
-import BillModal from "../../components/BillModal";
-import ConfirmDeleteModal from "../../components/ConfirmDeleteModal";
+import { RootState, AppDispatch } from "@/store";
+import BillModal from "@/app/components/BillModal";
+import ConfirmDeleteModal from "@/app/components/ConfirmDeleteModal";
 import {
   fetchBills,
   addBill,
@@ -11,7 +11,7 @@ import {
   deleteBill,
   clearError,
   clearBills,
-} from "../../../store/billSlice";
+} from "@/store/billSlice";
 
 export default function BillTab({
   roomId,

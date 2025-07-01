@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useDispatch } from "react-redux";
-import { AppDispatch } from "../../store";
-import { addRoom, editRoom, deleteRoom } from "../../store/roomSlice";
-import ValidatedInput from "../components/ValidatedInput";
+import { AppDispatch } from "@/store";
+import { addRoom, editRoom, deleteRoom } from "@/store/roomSlice";
+import ValidatedInput from "@/app/components/ValidatedInput";
 import {
   validators,
   validateForm,

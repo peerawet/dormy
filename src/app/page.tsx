@@ -3,7 +3,7 @@ import Navbar from "./components/Navbar";
 import Image from "next/image";
 import Link from "next/link";
 import { useSelector } from "react-redux";
-import { RootState } from "../store";
+import { RootState } from "@/store";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
