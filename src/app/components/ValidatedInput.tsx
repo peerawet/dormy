@@ -8,7 +8,7 @@ interface ValidatedInputProps {
   onChange: (value: string) => void;
   onValidation?: (result: ValidationResult) => void;
   validation?: ValidationResult;
-  type?: "text" | "number" | "tel" | "email" | "textarea" | "date";
+  type?: "text" | "number" | "tel" | "email" | "textarea" | "date" | "password";
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;

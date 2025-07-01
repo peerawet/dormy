@@ -1,6 +1,28 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { addRoom, editRoom, deleteRoom } from "./roomSlice";
 
+interface Tenant {
+  id: number;
+  name: string;
+  phone: string;
+  address?: string;
+}
+
+interface TenantRoom {
+  tenant: Tenant;
+}
+
+interface RentalContract {
+  id: number;
+  startDate: string;
+  endDate: string;
+  tenant: {
+    id: number;
+    name: string;
+    phone: string;
+  };
+}
+
 interface Room {
   id: number;
   name: string;
@@ -11,6 +33,8 @@ interface Room {
   electricFlat?: number;
   commonFee?: number;
   otherFee?: number;
+  tenantRooms?: TenantRoom[];
+  rentalContracts?: RentalContract[];
 }
 
 interface Dormitory {

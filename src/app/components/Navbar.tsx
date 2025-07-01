@@ -10,6 +10,8 @@ import ProfileModal from "./ProfileModal";
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [managementDropdownOpen, setManagementDropdownOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const auth = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const router = useRouter();
@@ -17,7 +19,14 @@ export default function Navbar() {
   const handleLogout = () => {
     dispatch(logout());
     setOpen(false);
+    setManagementDropdownOpen(false);
+    setUserDropdownOpen(false);
     router.push("/");
+  };
+
+  const closeAllDropdowns = () => {
+    setManagementDropdownOpen(false);
+    setUserDropdownOpen(false);
   };
 
   return (
@@ -77,6 +86,14 @@ export default function Navbar() {
             opacity: 1;
           }
         }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
 
         .navbar-float {
           animation: float 6s ease-in-out infinite;
@@ -103,6 +120,10 @@ export default function Navbar() {
 
         .bounce-in {
           animation: bounceIn 0.5s ease-out;
+        }
+
+        .fade-in {
+          animation: fadeIn 0.2s ease-out;
         }
 
         .menu-item-hover {
@@ -133,144 +154,248 @@ export default function Navbar() {
         .glass-morphism {
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
-          background: rgba(30, 58, 138, 0.8);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(30, 58, 138, 0.9);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .mobile-glass {
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          background: rgba(248, 250, 252, 0.95);
+          background: rgba(248, 250, 252, 0.98);
+          border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .dropdown-glass {
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          background: rgba(255, 255, 255, 0.95);
           border: 1px solid rgba(148, 163, 184, 0.2);
         }
       `}</style>
 
-      <nav className="sticky top-0 z-50 glass-morphism shadow-2xl border-b border-white/10">
+      {/* Overlay สำหรับปิด dropdown */}
+      {(managementDropdownOpen || userDropdownOpen) && (
+        <div className="fixed inset-0 z-40" onClick={closeAllDropdowns} />
+      )}
+
+      <nav className="sticky top-0 z-50 glass-morphism shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
+          <div className="flex items-center justify-between h-16 md:h-18">
             {/* Logo Section */}
             <Link
               href="/"
               className="flex items-center gap-3 group hover:scale-105 transition-all duration-300 navbar-float"
+              onClick={closeAllDropdowns}
             >
               <div className="relative">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 glow-effect">
+                <div className="w-10 h-10 md:w-11 md:h-11 bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300">
                   <span className="text-xl md:text-2xl text-white font-bold">
                     🏠
                   </span>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-sm"></div>
               </div>
               <div className="flex flex-col">
                 <span className="font-black text-xl md:text-2xl bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent">
                   Dormy
                 </span>
-                <span className="text-xs text-blue-200 font-medium tracking-wider opacity-80 group-hover:opacity-100 transition-opacity duration-300">
-                  MANAGEMENT SYSTEM
+                <span className="text-xs text-blue-200 font-medium tracking-wider opacity-80">
+                  MANAGEMENT
                 </span>
               </div>
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-1">
+            <div className="hidden lg:flex items-center gap-2">
               {auth.token ? (
                 <>
-                  <Link
-                    href="/dashboard"
-                    className="menu-item-hover group relative px-4 py-2.5 rounded-xl text-blue-100 hover:text-white transition-all duration-300 flex items-center gap-3 hover:bg-white/10 font-medium"
-                  >
-                    <span className="text-lg group-hover:scale-110 transition-transform duration-300">
-                      📊
-                    </span>
-                    <span className="tracking-wide">แดชบอร์ด</span>
-                    <div className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-400 to-blue-300 group-hover:w-4/5 group-hover:left-1/10 transition-all duration-300 rounded-full"></div>
-                  </Link>
+                  {/* Management Dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => {
+                        setManagementDropdownOpen(!managementDropdownOpen);
+                        setUserDropdownOpen(false);
+                      }}
+                      className="group relative px-4 py-2.5 rounded-xl text-blue-100 hover:text-white transition-all duration-300 flex items-center gap-2 hover:bg-white/10 font-medium"
+                    >
+                      <span className="text-lg group-hover:scale-110 transition-transform duration-200">
+                        📊
+                      </span>
+                      <span className="tracking-wide">จัดการ</span>
+                      <svg
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          managementDropdownOpen ? "rotate-180" : ""
+                        }`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
 
-                  <Link
-                    href="/dormitory"
-                    className="menu-item-hover group relative px-4 py-2.5 rounded-xl text-blue-100 hover:text-white transition-all duration-300 flex items-center gap-3 hover:bg-white/10 font-medium"
-                  >
-                    <span className="text-lg group-hover:scale-110 transition-transform duration-300">
-                      🏢
-                    </span>
-                    <span className="tracking-wide">จัดการหอพัก</span>
-                    <div className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-400 to-blue-300 group-hover:w-4/5 group-hover:left-1/10 transition-all duration-300 rounded-full"></div>
-                  </Link>
+                    {/* Management Dropdown Menu */}
+                    {managementDropdownOpen && (
+                      <div className="absolute top-full left-0 mt-2 w-56 dropdown-glass rounded-xl shadow-2xl py-2 z-50 slide-down">
+                        <Link
+                          href="/dashboard"
+                          className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200 mx-2 rounded-lg"
+                          onClick={closeAllDropdowns}
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center group-hover:from-blue-200 group-hover:to-blue-300 transition-all duration-200">
+                            <span className="text-sm">📊</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">แดชบอร์ด</span>
+                            <span className="text-xs text-gray-500">
+                              ภาพรวมทั้งหมด
+                            </span>
+                          </div>
+                        </Link>
 
-                  <button
-                    onClick={() => setProfileModalOpen(true)}
-                    className="menu-item-hover group relative px-4 py-2.5 rounded-xl text-blue-100 hover:text-white transition-all duration-300 flex items-center gap-3 hover:bg-white/10 font-medium"
-                  >
-                    <span className="text-lg group-hover:scale-110 transition-transform duration-300">
-                      👤
-                    </span>
-                    <span className="tracking-wide">ข้อมูลส่วนตัว</span>
-                    <div className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-400 to-blue-300 group-hover:w-4/5 group-hover:left-1/10 transition-all duration-300 rounded-full"></div>
-                  </button>
+                        <Link
+                          href="/dormitory"
+                          className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200 mx-2 rounded-lg"
+                          onClick={closeAllDropdowns}
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-lg flex items-center justify-center group-hover:from-indigo-200 group-hover:to-indigo-300 transition-all duration-200">
+                            <span className="text-sm">🏢</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">หอพัก & ห้อง</span>
+                            <span className="text-xs text-gray-500">
+                              จัดการหอพักและห้อง
+                            </span>
+                          </div>
+                        </Link>
 
-                  {/* Separator */}
-                  <div className="w-px h-8 bg-gradient-to-b from-transparent via-white/20 to-transparent mx-3"></div>
+                        <Link
+                          href="/tenants"
+                          className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200 mx-2 rounded-lg"
+                          onClick={closeAllDropdowns}
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center group-hover:from-green-200 group-hover:to-green-300 transition-all duration-200">
+                            <span className="text-sm">👥</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">ผู้เช่า</span>
+                            <span className="text-xs text-gray-500">
+                              จัดการข้อมูลผู้เช่า
+                            </span>
+                          </div>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
 
-                  <button
-                    onClick={handleLogout}
-                    className="group relative px-4 py-2.5 rounded-xl text-red-300 hover:text-white transition-all duration-300 flex items-center gap-3 hover:bg-red-500/20 font-medium border border-red-400/20 hover:border-red-400/40"
-                  >
-                    <span className="text-lg group-hover:scale-110 transition-transform duration-300">
-                      🚪
-                    </span>
-                    <span className="tracking-wide">ออกจากระบบ</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
-                  </button>
+                  {/* User Dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => {
+                        setUserDropdownOpen(!userDropdownOpen);
+                        setManagementDropdownOpen(false);
+                      }}
+                      className="group relative px-4 py-2.5 rounded-xl text-blue-100 hover:text-white transition-all duration-300 flex items-center gap-2 hover:bg-white/10 font-medium"
+                    >
+                      <span className="text-lg group-hover:scale-110 transition-transform duration-200">
+                        👤
+                      </span>
+                      <span className="tracking-wide">บัญชี</span>
+                      <svg
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          userDropdownOpen ? "rotate-180" : ""
+                        }`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* User Dropdown Menu */}
+                    {userDropdownOpen && (
+                      <div className="absolute top-full right-0 mt-2 w-52 dropdown-glass rounded-xl shadow-2xl py-2 z-50 slide-down">
+                        <button
+                          onClick={() => {
+                            setProfileModalOpen(true);
+                            closeAllDropdowns();
+                          }}
+                          className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200 mx-2 rounded-lg w-full text-left"
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center group-hover:from-purple-200 group-hover:to-purple-300 transition-all duration-200">
+                            <span className="text-sm">⚙️</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">ข้อมูลส่วนตัว</span>
+                            <span className="text-xs text-gray-500">
+                              แก้ไขโปรไฟล์
+                            </span>
+                          </div>
+                        </button>
+
+                        <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent my-2 mx-4"></div>
+
+                        <button
+                          onClick={handleLogout}
+                          className="group flex items-center gap-3 px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50/50 transition-all duration-200 mx-2 rounded-lg w-full text-left"
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-br from-red-100 to-red-200 rounded-lg flex items-center justify-center group-hover:from-red-200 group-hover:to-red-300 transition-all duration-200">
+                            <span className="text-sm">🚪</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">ออกจากระบบ</span>
+                            <span className="text-xs text-red-400">
+                              ลงชื่อออก
+                            </span>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <>
                   <Link
                     href="/login"
-                    className="menu-item-hover group relative px-4 py-2.5 rounded-xl text-blue-100 hover:text-white transition-all duration-300 flex items-center gap-3 hover:bg-white/10 font-medium"
+                    className="group relative px-4 py-2.5 rounded-xl text-blue-100 hover:text-white transition-all duration-300 flex items-center gap-2 hover:bg-white/10 font-medium"
                   >
-                    <span className="text-lg group-hover:scale-110 transition-transform duration-300">
+                    <span className="text-lg group-hover:scale-110 transition-transform duration-200">
                       🔑
                     </span>
                     <span className="tracking-wide">เข้าสู่ระบบ</span>
-                    <div className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-400 to-blue-300 group-hover:w-4/5 group-hover:left-1/10 transition-all duration-300 rounded-full"></div>
                   </Link>
 
                   <Link
                     href="/register"
-                    className="group relative ml-4 px-6 py-3 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl hover:shadow-blue-500/25 transform hover:scale-105 active:scale-95 shimmer-effect"
+                    className="group relative ml-3 px-5 py-2.5 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
                   >
-                    <span className="text-lg group-hover:scale-110 transition-transform duration-300">
+                    <span className="text-lg group-hover:scale-110 transition-transform duration-200">
                       ✨
                     </span>
                     <span className="tracking-wide">สมัครสมาชิก</span>
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
                   </Link>
                 </>
               )}
-
-              {/* FAQ Link */}
-              <div className="w-px h-8 bg-gradient-to-b from-transparent via-white/20 to-transparent mx-3"></div>
-              <Link
-                href="/faq"
-                className="menu-item-hover group relative px-4 py-2.5 rounded-xl text-blue-200 hover:text-blue-100 transition-all duration-300 flex items-center gap-3 hover:bg-white/5 font-medium"
-              >
-                <span className="text-lg group-hover:scale-110 transition-transform duration-300">
-                  ❓
-                </span>
-                <span className="tracking-wide">คำถามที่พบบ่อย</span>
-                <div className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-300 to-blue-200 group-hover:w-4/5 group-hover:left-1/10 transition-all duration-300 rounded-full"></div>
-              </Link>
             </div>
 
             {/* Mobile Menu Button */}
             <button
-              className="lg:hidden relative w-12 h-12 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300 flex flex-col justify-center items-center group active:scale-95"
-              onClick={() => setOpen(!open)}
+              className="lg:hidden relative w-11 h-11 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300 flex flex-col justify-center items-center group active:scale-95"
+              onClick={() => {
+                setOpen(!open);
+                closeAllDropdowns();
+              }}
               aria-label="Toggle menu"
             >
               <span
                 className={`block w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${
-                  open ? "rotate-45 translate-y-2 bg-blue-600" : ""
+                  open ? "rotate-45 translate-y-2 bg-blue-200" : ""
                 }`}
               ></span>
               <span
@@ -280,7 +405,7 @@ export default function Navbar() {
               ></span>
               <span
                 className={`block w-6 h-0.5 bg-white transition-all duration-300 ${
-                  open ? "-rotate-45 -translate-y-2 bg-blue-600" : ""
+                  open ? "-rotate-45 -translate-y-2 bg-blue-200" : ""
                 }`}
               ></span>
             </button>
@@ -294,77 +419,130 @@ export default function Navbar() {
               <div className="flex flex-col gap-2">
                 {auth.token ? (
                   <>
-                    <Link
-                      href="/dashboard"
-                      className="group flex items-center gap-4 px-4 py-4 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 transition-all duration-300 font-medium bounce-in"
-                      onClick={() => setOpen(false)}
-                      style={{ animationDelay: "0.1s" }}
-                    >
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center group-hover:from-blue-200 group-hover:to-blue-300 transition-all duration-300">
-                        <span className="text-lg">📊</span>
-                      </div>
-                      <span className="text-lg">แดชบอร์ด</span>
-                      <div className="ml-auto text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        →
-                      </div>
-                    </Link>
+                    {/* Management Section */}
+                    <div className="mb-2">
+                      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider px-4 py-2">
+                        จัดการระบบ
+                      </h3>
 
-                    <Link
-                      href="/dormitory"
-                      className="group flex items-center gap-4 px-4 py-4 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 transition-all duration-300 font-medium bounce-in"
-                      onClick={() => setOpen(false)}
-                      style={{ animationDelay: "0.2s" }}
-                    >
-                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-lg flex items-center justify-center group-hover:from-indigo-200 group-hover:to-indigo-300 transition-all duration-300">
-                        <span className="text-lg">🏢</span>
-                      </div>
-                      <span className="text-lg">จัดการหอพัก</span>
-                      <div className="ml-auto text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        →
-                      </div>
-                    </Link>
+                      <Link
+                        href="/dashboard"
+                        className="group flex items-center gap-4 px-4 py-3 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 transition-all duration-300 font-medium"
+                        onClick={() => setOpen(false)}
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center group-hover:from-blue-200 group-hover:to-blue-300 transition-all duration-300">
+                          <span className="text-lg">📊</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-base font-medium">
+                            แดชบอร์ด
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            ภาพรวมทั้งหมด
+                          </span>
+                        </div>
+                        <div className="ml-auto text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          →
+                        </div>
+                      </Link>
 
-                    <button
-                      onClick={() => {
-                        setOpen(false);
-                        setProfileModalOpen(true);
-                      }}
-                      className="group flex items-center gap-4 px-4 py-4 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 transition-all duration-300 font-medium bounce-in w-full text-left"
-                      style={{ animationDelay: "0.3s" }}
-                    >
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center group-hover:from-purple-200 group-hover:to-purple-300 transition-all duration-300">
-                        <span className="text-lg">👤</span>
-                      </div>
-                      <span className="text-lg">ข้อมูลส่วนตัว</span>
-                      <div className="ml-auto text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        →
-                      </div>
-                    </button>
+                      <Link
+                        href="/dormitory"
+                        className="group flex items-center gap-4 px-4 py-3 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 transition-all duration-300 font-medium"
+                        onClick={() => setOpen(false)}
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-lg flex items-center justify-center group-hover:from-indigo-200 group-hover:to-indigo-300 transition-all duration-300">
+                          <span className="text-lg">🏢</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-base font-medium">
+                            หอพัก & ห้อง
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            จัดการหอพักและห้อง
+                          </span>
+                        </div>
+                        <div className="ml-auto text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          →
+                        </div>
+                      </Link>
 
-                    {/* Separator */}
-                    <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent my-3"></div>
+                      <Link
+                        href="/tenants"
+                        className="group flex items-center gap-4 px-4 py-3 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 transition-all duration-300 font-medium"
+                        onClick={() => setOpen(false)}
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center group-hover:from-green-200 group-hover:to-green-300 transition-all duration-300">
+                          <span className="text-lg">👥</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-base font-medium">ผู้เช่า</span>
+                          <span className="text-sm text-gray-500">
+                            จัดการข้อมูลผู้เช่า
+                          </span>
+                        </div>
+                        <div className="ml-auto text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          →
+                        </div>
+                      </Link>
+                    </div>
 
-                    <button
-                      onClick={handleLogout}
-                      className="group flex items-center gap-4 px-4 py-4 rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50/80 transition-all duration-300 font-medium bounce-in w-full text-left"
-                      style={{ animationDelay: "0.4s" }}
-                    >
-                      <div className="w-10 h-10 bg-gradient-to-br from-red-100 to-red-200 rounded-lg flex items-center justify-center group-hover:from-red-200 group-hover:to-red-300 transition-all duration-300">
-                        <span className="text-lg">🚪</span>
-                      </div>
-                      <span className="text-lg">ออกจากระบบ</span>
-                      <div className="ml-auto text-red-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        →
-                      </div>
-                    </button>
+                    {/* Account Section */}
+                    <div className="border-t border-gray-200 pt-4 mt-2">
+                      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider px-4 py-2">
+                        บัญชีผู้ใช้
+                      </h3>
+
+                      <button
+                        onClick={() => {
+                          setOpen(false);
+                          setProfileModalOpen(true);
+                        }}
+                        className="group flex items-center gap-4 px-4 py-3 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 transition-all duration-300 font-medium w-full text-left"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center group-hover:from-purple-200 group-hover:to-purple-300 transition-all duration-300">
+                          <span className="text-lg">⚙️</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-base font-medium">
+                            ข้อมูลส่วนตัว
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            แก้ไขโปรไฟล์
+                          </span>
+                        </div>
+                        <div className="ml-auto text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          →
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={handleLogout}
+                        className="group flex items-center gap-4 px-4 py-3 rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50/80 transition-all duration-300 font-medium w-full text-left"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-red-100 to-red-200 rounded-lg flex items-center justify-center group-hover:from-red-200 group-hover:to-red-300 transition-all duration-300">
+                          <span className="text-lg">🚪</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-base font-medium">
+                            ออกจากระบบ
+                          </span>
+                          <span className="text-sm text-red-400">
+                            ลงชื่อออก
+                          </span>
+                        </div>
+                        <div className="ml-auto text-red-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          →
+                        </div>
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <>
                     <Link
                       href="/login"
-                      className="group flex items-center gap-4 px-4 py-4 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 transition-all duration-300 font-medium bounce-in"
+                      className="group flex items-center gap-4 px-4 py-4 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 transition-all duration-300 font-medium"
                       onClick={() => setOpen(false)}
-                      style={{ animationDelay: "0.1s" }}
                     >
                       <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center group-hover:from-blue-200 group-hover:to-blue-300 transition-all duration-300">
                         <span className="text-lg">🔑</span>
@@ -377,33 +555,14 @@ export default function Navbar() {
 
                     <Link
                       href="/register"
-                      className="group relative mt-2 px-6 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] bounce-in"
+                      className="group relative mt-2 px-6 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
                       onClick={() => setOpen(false)}
-                      style={{ animationDelay: "0.2s" }}
                     >
                       <span className="text-lg">✨</span>
                       <span className="text-lg">สมัครสมาชิก</span>
-                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
                     </Link>
                   </>
                 )}
-
-                {/* FAQ Link */}
-                <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent my-3"></div>
-                <Link
-                  href="/faq"
-                  className="group flex items-center gap-4 px-4 py-4 rounded-xl text-slate-600 hover:text-slate-700 hover:bg-slate-50/80 transition-all duration-300 font-medium bounce-in"
-                  onClick={() => setOpen(false)}
-                  style={{ animationDelay: "0.3s" }}
-                >
-                  <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center group-hover:from-slate-200 group-hover:to-slate-300 transition-all duration-300">
-                    <span className="text-lg">❓</span>
-                  </div>
-                  <span className="text-lg">คำถามที่พบบ่อย</span>
-                  <div className="ml-auto text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    →
-                  </div>
-                </Link>
               </div>
             </div>
           </div>

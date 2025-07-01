@@ -10,11 +10,10 @@ import {
   setActiveTab,
   clearRoomData,
 } from "../../../store/roomSlice";
-import TenantTab from "./TenantTab";
+import ContractTab from "./ContractTab";
 import BillTab from "./BillTab";
 
 export default function RoomDetailPage() {
-  const { roomId } = useParams();
   const dispatch = useDispatch<AppDispatch>();
   const auth = useSelector((state: RootState) => state.auth);
   const {
@@ -26,6 +25,7 @@ export default function RoomDetailPage() {
   } = useSelector((state: RootState) => state.room);
   const router = useRouter();
 
+  const { roomId } = useParams();
   useEffect(() => {
     if (auth.token && roomId) {
       dispatch(fetchRoomDetail({ roomId: String(roomId), token: auth.token }));
@@ -365,17 +365,17 @@ export default function RoomDetailPage() {
             <div className="flex gap-2">
               <button
                 className={`relative px-6 py-3 font-semibold rounded-xl transition-all duration-300 ${
-                  activeTab === "tenant"
+                  activeTab === "contract"
                     ? "bg-white text-blue-600 shadow-lg border-2 border-blue-200"
                     : "bg-transparent text-gray-600 hover:bg-white/50 hover:text-gray-800"
                 }`}
-                onClick={() => dispatch(setActiveTab("tenant"))}
+                onClick={() => dispatch(setActiveTab("contract"))}
               >
                 <span className="flex items-center gap-2">
-                  <span>👥</span>
-                  <span>รายละเอียดผู้เช่า</span>
+                  <span>📋</span>
+                  <span>สัญญาเช่า</span>
                 </span>
-                {activeTab === "tenant" && (
+                {activeTab === "contract" && (
                   <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-blue-600 rounded-full"></div>
                 )}
               </button>
@@ -400,8 +400,8 @@ export default function RoomDetailPage() {
 
           {/* Tab Content */}
           <div className="p-8">
-            {activeTab === "tenant" ? (
-              <TenantTab roomId={String(roomId)} />
+            {activeTab === "contract" ? (
+              <ContractTab roomId={String(roomId)} />
             ) : (
               <BillTab roomId={String(roomId)} room={room} />
             )}

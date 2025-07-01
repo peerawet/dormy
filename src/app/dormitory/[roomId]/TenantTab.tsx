@@ -16,7 +16,7 @@ function openContractPreview(contractId: number) {
   window.open(url, "_blank");
 }
 
-function ContractModal({
+function TenantModal({
   open,
   onClose,
   onSave,
@@ -30,20 +30,22 @@ function ContractModal({
   loading?: boolean;
 }) {
   type FormType = {
-    tenantName: string;
-    tenantPhone: string;
-    tenantIdCard: string;
-    tenantAddress: string;
+    name: string;
+    phone: string;
+    idCard: string;
+    address: string;
+    password: string;
     startDate: string;
     endDate: string;
   };
   const [form, setForm] = useState<FormType>(
     initial
       ? {
-          tenantName: initial.tenantName || "",
-          tenantPhone: initial.tenantPhone || "",
-          tenantIdCard: initial.tenantIdCard || "",
-          tenantAddress: initial.tenantAddress || "",
+          name: initial.name || "",
+          phone: initial.phone || "",
+          idCard: initial.idCard || "",
+          address: initial.address || "",
+          password: "", // ไม่แสดง password เดิม
           startDate: initial.startDate
             ? new Date(initial.startDate).toISOString().split("T")[0]
             : "",
@@ -52,34 +54,54 @@ function ContractModal({
             : "",
         }
       : {
-          tenantName: "",
-          tenantPhone: "",
-          tenantIdCard: "",
-          tenantAddress: "",
+          name: "",
+          phone: "",
+          idCard: "",
+          address: "",
+          password: "",
           startDate: "",
           endDate: "",
         }
   );
   const [fieldErrors, setFieldErrors] = useState<FieldValidation>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
+
   // Validation rules
   const validationRules = useMemo(
     () => ({
-      tenantName: [
+      name: [
         (value: string) => validators.required(value, "ชื่อผู้เช่า"),
         (value: string) => validators.minLength(value, 2, "ชื่อผู้เช่า"),
         (value: string) => validators.maxLength(value, 100, "ชื่อผู้เช่า"),
       ],
-      tenantPhone: [
+      phone: [
         (value: string) => validators.required(value, "เบอร์โทรศัพท์"),
         (value: string) => validators.phone(value),
       ],
-      tenantAddress: [
+      address: [
         (value: string) => validators.required(value, "ที่อยู่ผู้เช่า"),
         (value: string) => validators.minLength(value, 10, "ที่อยู่ผู้เช่า"),
         (value: string) => validators.maxLength(value, 500, "ที่อยู่ผู้เช่า"),
       ],
-      tenantIdCard: [(value: string) => validators.idCard(value)],
+      idCard: [(value: string) => validators.idCard(value)],
+      password: initial
+        ? [
+            // สำหรับการแก้ไข - password ไม่บังคับ
+            (value: string) => {
+              if (!value) return { isValid: true, message: "" };
+              return validators.minLength(value, 6, "รหัสผ่าน").isValid
+                ? { isValid: true, message: "" }
+                : {
+                    isValid: false,
+                    message: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร",
+                  };
+            },
+          ]
+        : [
+            // สำหรับการสร้างใหม่ - password บังคับ
+            (value: string) => validators.required(value, "รหัสผ่าน"),
+            (value: string) => validators.minLength(value, 6, "รหัสผ่าน"),
+          ],
       startDate: [
         (value: string) => validators.required(value, "วันที่เริ่มสัญญา"),
       ],
@@ -98,7 +120,7 @@ function ContractModal({
         },
       ],
     }),
-    [form.startDate]
+    [form.startDate, initial]
   );
 
   // Real-time validation
@@ -114,10 +136,11 @@ function ContractModal({
     setForm(
       initial
         ? {
-            tenantName: initial.tenantName || "",
-            tenantPhone: initial.tenantPhone || "",
-            tenantIdCard: initial.tenantIdCard || "",
-            tenantAddress: initial.tenantAddress || "",
+            name: initial.name || "",
+            phone: initial.phone || "",
+            idCard: initial.idCard || "",
+            address: initial.address || "",
+            password: "", // ไม่แสดง password เดิม
             startDate: initial.startDate
               ? new Date(initial.startDate).toISOString().split("T")[0]
               : "",
@@ -126,10 +149,11 @@ function ContractModal({
               : "",
           }
         : {
-            tenantName: "",
-            tenantPhone: "",
-            tenantIdCard: "",
-            tenantAddress: "",
+            name: "",
+            phone: "",
+            idCard: "",
+            address: "",
+            password: "",
             startDate: "",
             endDate: "",
           }
@@ -137,6 +161,7 @@ function ContractModal({
     setFieldErrors({});
     setHasSubmitted(false);
   }, [initial, open]);
+
   if (!open) return null;
 
   const modalContent = (
@@ -145,8 +170,8 @@ function ContractModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-            <span className="text-2xl">{initial ? "✏️" : "📋"}</span>
-            {initial ? "แก้ไขสัญญาเช่า" : "สร้างสัญญาเช่าใหม่"}
+            <span className="text-2xl">{initial ? "✏️" : "👤"}</span>
+            {initial ? "แก้ไขข้อมูลผู้เช่า" : "เพิ่มผู้เช่าใหม่"}
           </h2>
           <button
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 text-xl"
@@ -168,11 +193,9 @@ function ContractModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ValidatedInput
                   label="ชื่อผู้เช่า"
-                  value={form.tenantName}
-                  onChange={(value) =>
-                    setForm((f) => ({ ...f, tenantName: value }))
-                  }
-                  validation={fieldErrors.tenantName}
+                  value={form.name}
+                  onChange={(value) => setForm((f) => ({ ...f, name: value }))}
+                  validation={fieldErrors.name}
                   placeholder="กรอกชื่อ-นามสกุลผู้เช่า"
                   required
                   icon="👤"
@@ -181,11 +204,9 @@ function ContractModal({
 
                 <ValidatedInput
                   label="เบอร์โทรศัพท์"
-                  value={form.tenantPhone}
-                  onChange={(value) =>
-                    setForm((f) => ({ ...f, tenantPhone: value }))
-                  }
-                  validation={fieldErrors.tenantPhone}
+                  value={form.phone}
+                  onChange={(value) => setForm((f) => ({ ...f, phone: value }))}
+                  validation={fieldErrors.phone}
                   placeholder="กรอกเบอร์โทรศัพท์ 10 หลัก"
                   type="tel"
                   required
@@ -197,31 +218,47 @@ function ContractModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ValidatedInput
                   label="เลขบัตรประชาชน"
-                  value={form.tenantIdCard}
+                  value={form.idCard}
                   onChange={(value) =>
-                    setForm((f) => ({ ...f, tenantIdCard: value }))
+                    setForm((f) => ({ ...f, idCard: value }))
                   }
-                  validation={fieldErrors.tenantIdCard}
+                  validation={fieldErrors.idCard}
                   placeholder="กรอกเลขบัตรประชาชน 13 หลัก"
                   icon="🆔"
                   disabled={loading}
                 />
 
                 <ValidatedInput
-                  label="ที่อยู่ผู้เช่า"
-                  value={form.tenantAddress}
+                  label={initial ? "รหัสผ่านใหม่ (ไม่บังคับ)" : "รหัสผ่าน"}
+                  value={form.password}
                   onChange={(value) =>
-                    setForm((f) => ({ ...f, tenantAddress: value }))
+                    setForm((f) => ({ ...f, password: value }))
                   }
-                  validation={fieldErrors.tenantAddress}
-                  placeholder="กรอกที่อยู่ที่สามารถติดต่อได้"
-                  type="textarea"
-                  required
-                  icon="📍"
-                  rows={3}
+                  validation={fieldErrors.password}
+                  placeholder={
+                    initial
+                      ? "ใส่รหัสผ่านใหม่หากต้องการเปลี่ยน"
+                      : "กรอกรหัสผ่าน"
+                  }
+                  type="password"
+                  required={!initial}
+                  icon="🔒"
                   disabled={loading}
                 />
               </div>
+
+              <ValidatedInput
+                label="ที่อยู่ผู้เช่า"
+                value={form.address}
+                onChange={(value) => setForm((f) => ({ ...f, address: value }))}
+                validation={fieldErrors.address}
+                placeholder="กรอกที่อยู่ที่สามารถติดต่อได้"
+                type="textarea"
+                required
+                icon="📍"
+                rows={3}
+                disabled={loading}
+              />
             </div>
 
             {/* ข้อมูลสัญญา */}
@@ -354,7 +391,7 @@ function ContractModal({
             ) : (
               <>
                 <span>💾</span>
-                <span>{initial ? "บันทึกการแก้ไข" : "สร้างสัญญาเช่า"}</span>
+                <span>{initial ? "บันทึกการแก้ไข" : "เพิ่มผู้เช่า"}</span>
               </>
             )}
           </button>
@@ -424,42 +461,42 @@ function ConfirmModal({
 }
 
 export default function TenantTab({ roomId }: { roomId: string }) {
-  const [contracts, setContracts] = useState<any[]>([]);
+  const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
-  const [editContract, setEditContract] = useState<any | null>(null);
+  const [editTenant, setEditTenant] = useState<any | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const auth = useSelector((state: RootState) => state.auth);
   const room = useSelector((state: RootState) => state.room.currentRoom);
 
-  async function fetchContracts() {
+  async function fetchTenants() {
     setLoading(true);
-    const res = await fetch(`/api/rental-contract?roomId=${roomId}`, {
+    const res = await fetch(`/api/tenant?roomId=${roomId}`, {
       headers: { Authorization: `Bearer ${auth.token}` },
     });
     const data = await res.json();
-    if (data.success) setContracts(data.contracts);
+    if (data.success) setTenants(data.tenants);
     setLoading(false);
   }
 
   useEffect(() => {
-    if (auth.token) fetchContracts();
+    if (auth.token) fetchTenants();
   }, [auth.token, roomId]);
 
   async function handleSave(form: any) {
     setModalLoading(true);
-    if (editContract) {
-      await fetch("/api/rental-contract", {
+    if (editTenant) {
+      await fetch("/api/tenant", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${auth.token}`,
         },
-        body: JSON.stringify({ ...form, id: editContract.id, roomId }),
+        body: JSON.stringify({ ...form, id: editTenant.id, roomId }),
       });
     } else {
-      await fetch("/api/rental-contract", {
+      await fetch("/api/tenant", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -470,12 +507,13 @@ export default function TenantTab({ roomId }: { roomId: string }) {
     }
     setModalLoading(false);
     setModalOpen(false);
-    setEditContract(null);
-    await fetchContracts();
+    setEditTenant(null);
+    await fetchTenants();
   }
+
   async function handleDelete() {
     if (!deleteId) return;
-    await fetch("/api/rental-contract", {
+    await fetch("/api/tenant", {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -484,7 +522,7 @@ export default function TenantTab({ roomId }: { roomId: string }) {
       body: JSON.stringify({ id: deleteId }),
     });
     setDeleteId(null);
-    await fetchContracts();
+    await fetchTenants();
   }
 
   return (
@@ -492,24 +530,24 @@ export default function TenantTab({ roomId }: { roomId: string }) {
       {/* Header: Title + Add Button */}
       <div className="bg-blue-50 px-6 py-4 flex justify-between items-center border-b">
         <h3 className="font-bold text-lg text-blue-900 flex items-center gap-2">
-          ‍💼 สัญญาเช่า
+          👥 ผู้เช่า
         </h3>
         <button
           className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
           onClick={() => {
             setModalOpen(true);
-            setEditContract(null);
+            setEditTenant(null);
           }}
         >
-          + เพิ่มสัญญาเช่า
+          + เพิ่มผู้เช่า
         </button>
       </div>
       {/* Section: Table */}
       <div className="bg-gray-50 px-6 py-6">
         {loading ? (
           <div className="text-center text-gray-500">กำลังโหลด...</div>
-        ) : contracts.length === 0 ? (
-          <div className="text-center text-gray-500">ยังไม่มีสัญญาเช่า</div>
+        ) : tenants.length === 0 ? (
+          <div className="text-center text-gray-500">ยังไม่มีผู้เช่า</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-max text-left border border-blue-100 rounded-xl overflow-hidden text-sm">
@@ -536,35 +574,35 @@ export default function TenantTab({ roomId }: { roomId: string }) {
                 </tr>
               </thead>
               <tbody>
-                {contracts.map((c, i) => (
+                {tenants.map((t, i) => (
                   <tr
-                    key={c.id}
+                    key={t.id}
                     className={
                       "border-t border-blue-100 hover:bg-blue-50 transition-colors " +
                       (i % 2 === 0 ? "bg-white" : "bg-blue-25")
                     }
                   >
                     <td className="p-3 whitespace-nowrap font-medium">
-                      {c.tenantName}
+                      {t.name}
                     </td>
-                    <td className="p-3 whitespace-nowrap">{c.tenantPhone}</td>
+                    <td className="p-3 whitespace-nowrap">{t.phone}</td>
                     <td
                       className="p-3 whitespace-nowrap max-w-xs truncate"
-                      title={c.tenantAddress}
+                      title={t.address}
                     >
-                      {c.tenantAddress}
+                      {t.address}
                     </td>
                     <td className="p-3 whitespace-nowrap">
-                      {c.startDate.slice(0, 10)}
+                      {t.startDate.slice(0, 10)}
                     </td>
                     <td className="p-3 whitespace-nowrap">
-                      {c.endDate.slice(0, 10)}
+                      {t.endDate.slice(0, 10)}
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex gap-2 justify-center">
                         <button
                           className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
-                          onClick={() => openContractPreview(c.id)}
+                          onClick={() => openContractPreview(t.id)}
                         >
                           📋 ร่างสัญญา
                         </button>
@@ -572,14 +610,14 @@ export default function TenantTab({ roomId }: { roomId: string }) {
                           className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
                           onClick={() => {
                             setModalOpen(true);
-                            setEditContract(c);
+                            setEditTenant(t);
                           }}
                         >
                           แก้ไข
                         </button>
                         <button
                           className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                          onClick={() => setDeleteId(c.id)}
+                          onClick={() => setDeleteId(t.id)}
                         >
                           ลบ
                         </button>
@@ -592,21 +630,21 @@ export default function TenantTab({ roomId }: { roomId: string }) {
           </div>
         )}
       </div>
-      <ContractModal
+      <TenantModal
         open={modalOpen}
         onClose={() => {
           setModalOpen(false);
-          setEditContract(null);
+          setEditTenant(null);
         }}
         onSave={handleSave}
-        initial={editContract}
+        initial={editTenant}
         loading={modalLoading}
       />
       <ConfirmModal
         open={!!deleteId}
         onClose={() => setDeleteId(null)}
         onConfirm={handleDelete}
-        text="ยืนยันการลบสัญญาเช่า?"
+        text="ยืนยันการลบผู้เช่า?"
       />
     </div>
   );

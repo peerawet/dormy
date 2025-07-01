@@ -1,652 +1,17 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
-import { createPortal } from "react-dom";
-import { useSelector } from "react-redux";
-import { RootState } from "../../../store";
-import ValidatedInput from "../../components/ValidatedInput";
+import { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState, AppDispatch } from "../../../store";
+import BillModal from "../../components/BillModal";
+import ConfirmDeleteModal from "../../components/ConfirmDeleteModal";
 import {
-  validators,
-  validateForm,
-  FieldValidation,
-} from "../../../utils/validation";
-
-function BillModal({
-  open,
-  onClose,
-  onSave,
-  loading,
-  room,
-  tenants,
-  bills,
-  editBill,
-  onDelete,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onSave: (form: any) => void;
-  loading?: boolean;
-  room: any;
-  tenants: { name: string; phone: string; address: string }[];
-  bills: any[];
-  editBill?: any | null;
-  onDelete?: (billId: number) => void;
-}) {
-  const isEdit = !!editBill;
-  const [form, setForm] = useState({
-    id: null as number | null,
-    billDate: "",
-    tenantName: "",
-    water: "",
-    meterWaterStart: "",
-    meterWaterEnd: "",
-    electric: "",
-    meterElectricStart: "",
-    meterElectricEnd: "",
-    common: "",
-    other: "",
-    rent: "",
-    total: "",
-  });
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<FieldValidation>({});
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-
-  // Validation rules
-  const validationRules = useMemo(
-    () => ({
-      billDate: [(value: string) => validators.required(value, "วันที่บิล")],
-      tenantName: [
-        (value: string) => validators.required(value, "ชื่อผู้เช่า"),
-      ],
-      rent: [
-        (value: string) => validators.required(value, "ค่าเช่า"),
-        (value: string) => validators.positiveNumber(value, "ค่าเช่า"),
-      ],
-      meterWaterStart: [
-        (value: string) => {
-          if (!value.trim()) return { isValid: true, message: "" };
-          return validators.number(value, "เลขมิเตอร์น้ำต้น");
-        },
-      ],
-      meterWaterEnd: [
-        (value: string) => {
-          if (!value.trim() || !form.meterWaterStart)
-            return { isValid: true, message: "" };
-          const start = Number(form.meterWaterStart);
-          const end = Number(value);
-          if (isNaN(end)) return validators.number(value, "เลขมิเตอร์น้ำปลาย");
-          return end >= start
-            ? { isValid: true, message: "" }
-            : {
-                isValid: false,
-                message: "เลขมิเตอร์ปลายต้องมากกว่าหรือเท่ากับเลขต้น",
-              };
-        },
-      ],
-      meterElectricStart: [
-        (value: string) => {
-          if (!value.trim()) return { isValid: true, message: "" };
-          return validators.number(value, "เลขมิเตอร์ไฟต้น");
-        },
-      ],
-      meterElectricEnd: [
-        (value: string) => {
-          if (!value.trim() || !form.meterElectricStart)
-            return { isValid: true, message: "" };
-          const start = Number(form.meterElectricStart);
-          const end = Number(value);
-          if (isNaN(end)) return validators.number(value, "เลขมิเตอร์ไฟปลาย");
-          return end >= start
-            ? { isValid: true, message: "" }
-            : {
-                isValid: false,
-                message: "เลขมิเตอร์ปลายต้องมากกว่าหรือเท่ากับเลขต้น",
-              };
-        },
-      ],
-      common: [
-        (value: string) => {
-          if (!value.trim()) return { isValid: true, message: "" };
-          return validators.number(value, "ค่าส่วนกลาง");
-        },
-      ],
-      other: [
-        (value: string) => {
-          if (!value.trim()) return { isValid: true, message: "" };
-          return validators.number(value, "ค่าอื่นๆ");
-        },
-      ],
-    }),
-    [form.meterWaterStart, form.meterElectricStart]
-  );
-
-  // Real-time validation
-  const { isValid: isFormValid, errors } = useMemo(() => {
-    const { id, ...formToValidate } = form;
-    return validateForm(formToValidate, validationRules);
-  }, [form, validationRules]);
-
-  useEffect(() => {
-    setFieldErrors(errors);
-  }, [errors]);
-
-  useEffect(() => {
-    if (open) {
-      if (isEdit) {
-        // Pre-fill form with edit bill data
-        setForm({
-          id: editBill.id,
-          billDate: editBill.billDate?.slice(0, 10) || "",
-          tenantName: editBill.tenantName || "",
-          water: editBill.water ? String(editBill.water) : "",
-          meterWaterStart: editBill.meterWaterStart
-            ? String(editBill.meterWaterStart)
-            : "",
-          meterWaterEnd: editBill.meterWaterEnd
-            ? String(editBill.meterWaterEnd)
-            : "",
-          electric: editBill.electric ? String(editBill.electric) : "",
-          meterElectricStart: editBill.meterElectricStart
-            ? String(editBill.meterElectricStart)
-            : "",
-          meterElectricEnd: editBill.meterElectricEnd
-            ? String(editBill.meterElectricEnd)
-            : "",
-          common: editBill.common ? String(editBill.common) : "",
-          other: editBill.other ? String(editBill.other) : "",
-          rent: editBill.rent ? String(editBill.rent) : "",
-          total: editBill.total ? String(editBill.total) : "",
-        });
-      } else {
-        // หา bill ล่าสุดเพื่อ prefill เลขมิเตอร์
-        const latestBill = bills?.length > 0 ? bills[0] : null;
-
-        setForm({
-          id: null,
-          billDate: new Date().toISOString().slice(0, 10), // วันปัจจุบัน
-          tenantName: tenants?.length ? tenants[tenants.length - 1].name : "",
-          water: "",
-          meterWaterStart: latestBill?.meterWaterEnd
-            ? String(latestBill.meterWaterEnd)
-            : "",
-          meterWaterEnd: "",
-          electric: "",
-          meterElectricStart: latestBill?.meterElectricEnd
-            ? String(latestBill.meterElectricEnd)
-            : "",
-          meterElectricEnd: "",
-          common: room?.commonFee ? String(room.commonFee) : "",
-          other: room?.otherFee ? String(room.otherFee) : "",
-          rent: room?.price ? String(room.price) : "",
-          total: "",
-        });
-      }
-      setConfirmDelete(false);
-      setFieldErrors({});
-      setHasSubmitted(false);
-    }
-  }, [open, room, tenants, bills, editBill, isEdit]);
-
-  useEffect(() => {
-    let water = form.water;
-    if (form.meterWaterStart && form.meterWaterEnd && room?.waterRate) {
-      const units = Number(form.meterWaterEnd) - Number(form.meterWaterStart);
-      if (units >= 0) water = String(units * room.waterRate);
-    } else if (room?.waterFlat) {
-      water = String(room.waterFlat);
-    }
-    let electric = form.electric;
-    if (
-      form.meterElectricStart &&
-      form.meterElectricEnd &&
-      room?.electricRate
-    ) {
-      const units =
-        Number(form.meterElectricEnd) - Number(form.meterElectricStart);
-      if (units >= 0) electric = String(units * room.electricRate);
-    } else if (room?.electricFlat) {
-      electric = String(room.electricFlat);
-    }
-    const total =
-      (Number(water) || 0) +
-      (Number(electric) || 0) +
-      (Number(form.common) || 0) +
-      (Number(form.other) || 0) +
-      (Number(form.rent) || 0);
-    setForm((f) => ({
-      ...f,
-      water,
-      electric,
-      total: String(total),
-    }));
-  }, [
-    form.meterWaterStart,
-    form.meterWaterEnd,
-    form.meterElectricStart,
-    form.meterElectricEnd,
-    form.common,
-    form.other,
-    form.rent,
-    room,
-  ]);
-
-  // Calculate units for display
-  const waterUnits = useMemo(() => {
-    if (form.meterWaterStart && form.meterWaterEnd) {
-      const start = Number(form.meterWaterStart);
-      const end = Number(form.meterWaterEnd);
-      return end >= start ? end - start : 0;
-    }
-    return 0;
-  }, [form.meterWaterStart, form.meterWaterEnd]);
-
-  const electricUnits = useMemo(() => {
-    if (form.meterElectricStart && form.meterElectricEnd) {
-      const start = Number(form.meterElectricStart);
-      const end = Number(form.meterElectricEnd);
-      return end >= start ? end - start : 0;
-    }
-    return 0;
-  }, [form.meterElectricStart, form.meterElectricEnd]);
-
-  const handleSave = () => {
-    setHasSubmitted(true);
-    if (isFormValid) {
-      const formData = { ...form };
-      if (isEdit) {
-        formData.id = editBill.id;
-      }
-      onSave(formData);
-    }
-  };
-
-  const handleDelete = () => {
-    if (isEdit && onDelete) {
-      onDelete(editBill.id);
-      setConfirmDelete(false);
-    }
-  };
-
-  if (!open) return null;
-
-  const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-            <span className="text-2xl">{isEdit ? "✏️" : "📋"}</span>
-            {isEdit ? "แก้ไขบิล" : "สร้างบิลใหม่"}
-          </h2>
-          <button
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 text-xl"
-            onClick={onClose}
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* ข้อมูลพื้นฐาน */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">
-                📅 ข้อมูลพื้นฐาน
-              </h3>
-
-              <ValidatedInput
-                label="วันที่บิล"
-                value={form.billDate}
-                onChange={(value) =>
-                  setForm((f) => ({ ...f, billDate: value }))
-                }
-                validation={fieldErrors.billDate}
-                type="date"
-                required
-                icon="📅"
-                disabled={loading}
-              />
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <span className="flex items-center gap-2">
-                    <span className="text-lg">👤</span>
-                    ชื่อผู้เช่า
-                    <span className="text-red-500">*</span>
-                  </span>
-                </label>
-                <select
-                  className={`w-full px-4 py-3 border rounded-xl font-medium transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 ${
-                    fieldErrors.tenantName && !fieldErrors.tenantName.isValid
-                      ? "border-red-300 bg-red-50 text-red-900 focus:border-red-500 focus:ring-red-500/20"
-                      : fieldErrors.tenantName &&
-                        fieldErrors.tenantName.isValid &&
-                        form.tenantName
-                      ? "border-green-300 bg-green-50 text-green-900 focus:border-green-500 focus:ring-green-500/20"
-                      : "border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-500/20"
-                  }`}
-                  value={form.tenantName}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, tenantName: e.target.value }))
-                  }
-                  disabled={loading}
-                >
-                  <option value="">เลือกผู้เช่า</option>
-                  {tenants.map((t, i) => (
-                    <option key={i} value={t.name}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.tenantName && !fieldErrors.tenantName.isValid && (
-                  <div className="flex items-center gap-2 text-red-600 text-sm mt-2">
-                    <span className="text-xs">⚠️</span>
-                    <span>{fieldErrors.tenantName.message}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ค่าใช้จ่าย */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">
-                💰 ค่าใช้จ่าย
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <ValidatedInput
-                  label="ค่าเช่า"
-                  value={form.rent}
-                  onChange={(value) => setForm((f) => ({ ...f, rent: value }))}
-                  validation={fieldErrors.rent}
-                  type="number"
-                  placeholder="0"
-                  required
-                  icon="🏠"
-                  suffix="บาท"
-                  disabled={loading}
-                  min={0}
-                />
-
-                <ValidatedInput
-                  label="ค่าส่วนกลาง"
-                  value={form.common}
-                  onChange={(value) =>
-                    setForm((f) => ({ ...f, common: value }))
-                  }
-                  validation={fieldErrors.common}
-                  type="number"
-                  placeholder="0"
-                  icon="🏢"
-                  suffix="บาท"
-                  disabled={loading}
-                  min={0}
-                />
-              </div>
-
-              <ValidatedInput
-                label="ค่าอื่นๆ"
-                value={form.other}
-                onChange={(value) => setForm((f) => ({ ...f, other: value }))}
-                validation={fieldErrors.other}
-                type="number"
-                placeholder="0"
-                icon="📋"
-                suffix="บาท"
-                disabled={loading}
-                min={0}
-              />
-            </div>
-
-            {/* มิเตอร์น้ำ */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">
-                💧 มิเตอร์น้ำ
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <ValidatedInput
-                  label="เลขต้น"
-                  value={form.meterWaterStart}
-                  onChange={(value) =>
-                    setForm((f) => ({ ...f, meterWaterStart: value }))
-                  }
-                  validation={fieldErrors.meterWaterStart}
-                  type="number"
-                  placeholder="0"
-                  icon="🔢"
-                  suffix="หน่วย"
-                  disabled={loading}
-                  min={0}
-                />
-
-                <ValidatedInput
-                  label="เลขปลาย"
-                  value={form.meterWaterEnd}
-                  onChange={(value) =>
-                    setForm((f) => ({ ...f, meterWaterEnd: value }))
-                  }
-                  validation={fieldErrors.meterWaterEnd}
-                  type="number"
-                  placeholder="0"
-                  icon="🔢"
-                  suffix="หน่วย"
-                  disabled={loading}
-                  min={0}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <span className="flex items-center gap-2">
-                    <span className="text-lg">💧</span>
-                    ค่าน้ำ (คำนวณอัตโนมัติ)
-                  </span>
-                </label>
-                <input
-                  type="number"
-                  className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 font-semibold"
-                  value={form.water}
-                  readOnly
-                />
-              </div>
-
-              {/* แสดงจำนวนหน่วยน้ำ */}
-              {form.meterWaterStart &&
-                form.meterWaterEnd &&
-                waterUnits >= 0 && (
-                  <div className="text-center py-2">
-                    <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
-                      💧 ใช้น้ำ {waterUnits.toLocaleString()} หน่วย
-                      {room?.waterRate && ` (${room.waterRate} บาท/หน่วย)`}
-                    </span>
-                  </div>
-                )}
-            </div>
-
-            {/* มิเตอร์ไฟ */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">
-                ⚡ มิเตอร์ไฟ
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <ValidatedInput
-                  label="เลขต้น"
-                  value={form.meterElectricStart}
-                  onChange={(value) =>
-                    setForm((f) => ({ ...f, meterElectricStart: value }))
-                  }
-                  validation={fieldErrors.meterElectricStart}
-                  type="number"
-                  placeholder="0"
-                  icon="🔢"
-                  suffix="หน่วย"
-                  disabled={loading}
-                  min={0}
-                />
-
-                <ValidatedInput
-                  label="เลขปลาย"
-                  value={form.meterElectricEnd}
-                  onChange={(value) =>
-                    setForm((f) => ({ ...f, meterElectricEnd: value }))
-                  }
-                  validation={fieldErrors.meterElectricEnd}
-                  type="number"
-                  placeholder="0"
-                  icon="🔢"
-                  suffix="หน่วย"
-                  disabled={loading}
-                  min={0}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <span className="flex items-center gap-2">
-                    <span className="text-lg">⚡</span>
-                    ค่าไฟ (คำนวณอัตโนมัติ)
-                  </span>
-                </label>
-                <input
-                  type="number"
-                  className="w-full px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-700 font-semibold"
-                  value={form.electric}
-                  readOnly
-                />
-              </div>
-              {/* แสดงจำนวนหน่วยไฟ */}
-              {form.meterElectricStart &&
-                form.meterElectricEnd &&
-                electricUnits >= 0 && (
-                  <div className="text-center py-2">
-                    <span className="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-medium">
-                      ⚡ ใช้ไฟ {electricUnits.toLocaleString()} หน่วย
-                      {room?.electricRate &&
-                        ` (${room.electricRate} บาท/หน่วย)`}
-                    </span>
-                  </div>
-                )}
-            </div>
-          </div>
-
-          {/* Form validation summary */}
-          {hasSubmitted && !isFormValid && (
-            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-              <div className="flex items-start gap-3">
-                <span className="text-yellow-600 text-lg">⚠️</span>
-                <div>
-                  <p className="text-yellow-800 font-medium mb-2">
-                    กรุณาตรวจสอบข้อมูล:
-                  </p>
-                  <ul className="text-yellow-700 text-sm space-y-1">
-                    {Object.entries(fieldErrors).map(
-                      ([field, validation]) =>
-                        !validation.isValid && (
-                          <li key={field} className="flex items-center gap-2">
-                            <span>•</span>
-                            <span>{validation.message}</span>
-                          </li>
-                        )
-                    )}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* รวมทั้งหมด */}
-          <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-            <div className="flex items-center justify-between">
-              <span className="text-xl font-bold text-gray-700">
-                💸 ยอดรวมทั้งหมด
-              </span>
-              <span className="text-3xl font-bold text-blue-600">
-                ฿{Number(form.total || 0).toLocaleString()}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center gap-3">
-            {isEdit && !confirmDelete && (
-              <button
-                className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
-                onClick={() => setConfirmDelete(true)}
-                disabled={loading}
-              >
-                🗑️ ลบบิล
-              </button>
-            )}
-            {isEdit && confirmDelete && (
-              <div className="flex items-center gap-3">
-                <span className="text-red-600 font-medium">
-                  ⚠️ ยืนยันการลบ?
-                </span>
-                <button
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
-                  onClick={() => setConfirmDelete(false)}
-                  disabled={loading}
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                  onClick={handleDelete}
-                  disabled={loading}
-                >
-                  ลบถาวร
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
-              onClick={onClose}
-              disabled={loading}
-            >
-              ยกเลิก
-            </button>
-            <button
-              className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${
-                loading
-                  ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                  : isFormValid
-                  ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-              onClick={handleSave}
-              disabled={loading || (!isFormValid && hasSubmitted)}
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-400 border-t-gray-600"></div>
-                  <span>กำลังบันทึก...</span>
-                </>
-              ) : (
-                <>
-                  <span>💾</span>
-                  <span>{isEdit ? "บันทึกการแก้ไข" : "สร้างบิลใหม่"}</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // ใช้ Portal เพื่อ render modal ที่ body
-  return typeof window !== "undefined"
-    ? createPortal(modalContent, document.body)
-    : null;
-}
+  fetchBills,
+  addBill,
+  updateBill,
+  deleteBill,
+  clearError,
+  clearBills,
+} from "../../../store/billSlice";
 
 export default function BillTab({
   roomId,
@@ -655,89 +20,80 @@ export default function BillTab({
   roomId: string;
   room: any;
 }) {
-  const [bills, setBills] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalLoading, setModalLoading] = useState(false);
   const [editBill, setEditBill] = useState<any | null>(null);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [billToDelete, setBillToDelete] = useState<any>(null);
+  const dispatch = useDispatch<AppDispatch>();
   const auth = useSelector((state: RootState) => state.auth);
+  const { bills, loading, error } = useSelector(
+    (state: RootState) => state.bill
+  );
 
-  const tenants = (room?.rentalContracts || [])
-    .map((c: any) => ({
-      name: c.tenantName,
-      phone: c.tenantPhone,
-      address: c.tenantAddress,
+  const tenants = (room?.tenantRooms || [])
+    .map((tenantRoom: any) => ({
+      id: tenantRoom.tenant?.id,
+      name: tenantRoom.tenant?.name,
+      phone: tenantRoom.tenant?.phone,
+      address: tenantRoom.tenant?.address,
     }))
-    .filter((c: any) => !!c.name);
+    .filter((t: any) => !!t.name && !!t.id);
 
   async function handleAddBill(form: any) {
-    setModalLoading(true);
     const isEdit = form.id !== null;
 
+    // ตรวจสอบว่าเลือกผู้เช่าแล้ว
+    if (!form.tenantId || form.tenantId === "") {
+      alert("กรุณาเลือกผู้เช่า");
+      return;
+    }
+
+    const payload = {
+      billDate: form.billDate,
+      tenantId: Number(form.tenantId),
+      water: Number(form.water),
+      electric: Number(form.electric),
+      common: Number(form.common),
+      other: Number(form.other),
+      rent: Number(form.rent),
+      discount: Number(form.discount) || 0,
+      total: Number(form.total),
+      meterWaterStart: form.meterWaterStart
+        ? Number(form.meterWaterStart)
+        : null,
+      meterWaterEnd: form.meterWaterEnd ? Number(form.meterWaterEnd) : null,
+      meterElectricStart: form.meterElectricStart
+        ? Number(form.meterElectricStart)
+        : null,
+      meterElectricEnd: form.meterElectricEnd
+        ? Number(form.meterElectricEnd)
+        : null,
+      roomId: Number(roomId),
+    };
+
     try {
-      const payload = {
-        ...form,
-        water: Number(form.water),
-        electric: Number(form.electric),
-        common: Number(form.common),
-        other: Number(form.other),
-        rent: Number(form.rent),
-        total: Number(form.total),
-        meterWaterStart: form.meterWaterStart
-          ? Number(form.meterWaterStart)
-          : null,
-        meterWaterEnd: form.meterWaterEnd ? Number(form.meterWaterEnd) : null,
-        meterElectricStart: form.meterElectricStart
-          ? Number(form.meterElectricStart)
-          : null,
-        meterElectricEnd: form.meterElectricEnd
-          ? Number(form.meterElectricEnd)
-          : null,
-        roomId: Number(roomId),
-      };
-
-      const res = await fetch(isEdit ? `/api/bill/${form.id}` : "/api/bill", {
-        method: isEdit ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${auth.token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      // ตรวจสอบ response status
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      // ตรวจสอบว่า response มี content หรือไม่
-      const text = await res.text();
-      if (!text) {
-        throw new Error("Empty response from server");
-      }
-
-      const data = JSON.parse(text);
-      if (data.success) {
-        setModalOpen(false);
-        setEditBill(null);
-        if (isEdit) {
-          setBills((bills: any[]) =>
-            bills.map((b: any) => (b.id === form.id ? data.bill : b))
-          );
-        } else {
-          setBills((b: any[]) => [data.bill, ...b]);
-        }
+      if (isEdit) {
+        await dispatch(
+          updateBill({
+            token: auth.token!,
+            billId: form.id,
+            bill: payload,
+          })
+        ).unwrap();
       } else {
-        throw new Error(
-          data.message || `Failed to ${isEdit ? "update" : "add"} bill`
-        );
+        await dispatch(
+          addBill({
+            token: auth.token!,
+            bill: payload,
+          })
+        ).unwrap();
       }
+
+      setModalOpen(false);
+      setEditBill(null);
     } catch (error: any) {
       console.error(`Error ${isEdit ? "updating" : "adding"} bill:`, error);
-      alert(`เกิดข้อผิดพลาด: ${error.message}`);
-    } finally {
-      setModalLoading(false);
+      alert(`เกิดข้อผิดพลาด: ${error}`);
     }
   }
 
@@ -746,58 +102,34 @@ export default function BillTab({
     setModalOpen(true);
   };
 
-  const handleDeleteBill = async (billId: number) => {
+  const handleDeleteBill = async () => {
+    if (!auth.token || !billToDelete) return;
     try {
-      const res = await fetch(`/api/bill/${billId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${auth.token}`,
-        },
-      });
+      await dispatch(
+        deleteBill({
+          token: auth.token!,
+          billId: billToDelete.id,
+        })
+      ).unwrap();
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        setBills((bills: any[]) => bills.filter((b: any) => b.id !== billId));
-        setModalOpen(false);
-        setEditBill(null);
-      } else {
-        throw new Error(data.message || "Failed to delete bill");
-      }
+      setConfirmModalOpen(false);
+      setBillToDelete(null);
     } catch (error: any) {
       console.error("Error deleting bill:", error);
-      alert(`เกิดข้อผิดพลาด: ${error.message}`);
-    }
-  };
-
-  const handleDirectDelete = async (billId: number) => {
-    if (confirm("คุณแน่ใจหรือไม่ที่จะลบบิลนี้?")) {
-      await handleDeleteBill(billId);
+      alert(`เกิดข้อผิดพลาด: ${error}`);
     }
   };
 
   useEffect(() => {
-    async function fetchBills() {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await fetch(`/api/bill?roomId=${roomId}`, {
-          headers: { Authorization: `Bearer ${auth.token}` },
-        });
-        const data = await res.json();
-        if (data.success) setBills(data.bills);
-        else setError(data.message || "เกิดข้อผิดพลาด");
-      } catch (e: any) {
-        setError(e.message || "เกิดข้อผิดพลาด");
-      } finally {
-        setLoading(false);
-      }
+    if (auth.token && roomId) {
+      dispatch(fetchBills({ roomId, token: auth.token }));
     }
-    if (auth.token && roomId) fetchBills();
-  }, [auth.token, roomId]);
+
+    // Clean up when component unmounts or roomId changes
+    return () => {
+      dispatch(clearBills());
+    };
+  }, [auth.token, roomId, dispatch]);
 
   return (
     <div className="bg-white rounded-xl shadow-xl p-0 overflow-hidden">
@@ -822,12 +154,24 @@ export default function BillTab({
           setEditBill(null);
         }}
         onSave={handleAddBill}
-        loading={modalLoading}
+        loading={loading}
         room={room}
         tenants={tenants}
         bills={bills}
         editBill={editBill}
-        onDelete={handleDeleteBill}
+        autoSelectTenant={tenants.length === 1}
+      />
+
+      <ConfirmDeleteModal
+        open={confirmModalOpen}
+        onClose={() => {
+          setConfirmModalOpen(false);
+          setBillToDelete(null);
+        }}
+        onConfirm={handleDeleteBill}
+        text={`คุณแน่ใจหรือไม่ที่จะลบบิลของ ${
+          billToDelete?.tenant?.name || "ผู้เช่าคนนี้"
+        }?`}
       />
       <div className="bg-gray-50 px-6 py-6">
         {loading ? (
@@ -848,19 +192,7 @@ export default function BillTab({
                     ชื่อผู้เช่า
                   </th>
                   <th className="p-3 font-semibold whitespace-nowrap">
-                    เลขมิเตอร์น้ำต้น
-                  </th>
-                  <th className="p-3 font-semibold whitespace-nowrap">
-                    เลขมิเตอร์น้ำปลาย
-                  </th>
-                  <th className="p-3 font-semibold whitespace-nowrap">
                     ค่าน้ำ
-                  </th>
-                  <th className="p-3 font-semibold whitespace-nowrap">
-                    เลขมิเตอร์ไฟต้น
-                  </th>
-                  <th className="p-3 font-semibold whitespace-nowrap">
-                    เลขมิเตอร์ไฟปลาย
                   </th>
                   <th className="p-3 font-semibold whitespace-nowrap">ค่าไฟ</th>
                   <th className="p-3 font-semibold whitespace-nowrap">
@@ -869,6 +201,9 @@ export default function BillTab({
                   <th className="p-3 font-semibold whitespace-nowrap">อื่นๆ</th>
                   <th className="p-3 font-semibold whitespace-nowrap">
                     ค่าเช่า
+                  </th>
+                  <th className="p-3 font-semibold whitespace-nowrap">
+                    ส่วนลด
                   </th>
                   <th className="p-3 font-semibold whitespace-nowrap bg-blue-200">
                     รวม
@@ -891,22 +226,10 @@ export default function BillTab({
                       {b.billDate?.slice(0, 10)}
                     </td>
                     <td className="p-3 whitespace-nowrap font-medium">
-                      {b.tenantName}
-                    </td>
-                    <td className="p-3 text-center">
-                      {b.meterWaterStart ?? "-"}
-                    </td>
-                    <td className="p-3 text-center">
-                      {b.meterWaterEnd ?? "-"}
+                      {b.tenant?.name || "ไม่ระบุ"}
                     </td>
                     <td className="p-3 text-right">
                       {b.water?.toLocaleString()}
-                    </td>
-                    <td className="p-3 text-center">
-                      {b.meterElectricStart ?? "-"}
-                    </td>
-                    <td className="p-3 text-center">
-                      {b.meterElectricEnd ?? "-"}
                     </td>
                     <td className="p-3 text-right">
                       {b.electric?.toLocaleString()}
@@ -920,22 +243,28 @@ export default function BillTab({
                     <td className="p-3 text-right">
                       {b.rent?.toLocaleString()}
                     </td>
+                    <td className="p-3 text-right text-green-600 font-medium">
+                      {(b.discount || 0).toLocaleString()}
+                    </td>
                     <td className="p-3 text-right font-bold text-blue-700 bg-blue-50">
                       {b.total?.toLocaleString()}
                     </td>
-                    <td className="p-3 text-center">
-                      <div className="flex gap-2 justify-center">
+                    <td className="p-3 whitespace-nowrap">
+                      <div className="flex gap-2">
                         <button
-                          className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                          className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs hover:bg-yellow-200"
                           onClick={() => handleEditBill(b)}
                         >
-                          แก้ไข
+                          ✏️ แก้ไข
                         </button>
                         <button
-                          className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                          onClick={() => handleDirectDelete(b.id)}
+                          className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200"
+                          onClick={() => {
+                            setBillToDelete(b);
+                            setConfirmModalOpen(true);
+                          }}
                         >
-                          ลบ
+                          🗑️ ลบ
                         </button>
                       </div>
                     </td>

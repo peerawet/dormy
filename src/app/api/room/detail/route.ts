@@ -32,7 +32,37 @@ export async function GET(req: Request) {
     );
   const room = await prisma.room.findUnique({
     where: { id: Number(roomId) },
-    include: { rentalContracts: true },
+    include: {
+      tenantRooms: {
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              idCard: true,
+              address: true,
+              // ไม่ส่ง password กลับไป
+            },
+          },
+        },
+      },
+      rentalContracts: {
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              idCard: true,
+              address: true,
+              // ไม่ส่ง password กลับไป
+            },
+          },
+        },
+        orderBy: { startDate: "desc" },
+      },
+    },
   });
   if (!room)
     return NextResponse.json(

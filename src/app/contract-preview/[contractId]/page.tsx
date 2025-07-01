@@ -2,45 +2,45 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useSelector } from "react-redux";
-import { RootState } from "@/store";
+import { RootState } from "../../../store";
 import jsPDF from "jspdf";
 
 export default function ContractPreviewPage() {
   const params = useParams();
-  const contractId = params.contractId;
-  const [contract, setContract] = useState<any>(null);
+  const tenantId = params.contractId; // ใช้ contractId เป็น tenantId เพื่อความเข้ากันได้กับ URL เดิม
+  const [tenant, setTenant] = useState<any>(null);
   const [room, setRoom] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const auth = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
-    if (auth.token && contractId) {
-      fetchContractData();
+    if (auth.token && tenantId) {
+      fetchTenantData();
     }
-  }, [auth.token, contractId]);
+  }, [auth.token, tenantId]);
 
-  async function fetchContractData() {
+  async function fetchTenantData() {
     try {
-      // Fetch contract data
-      const contractRes = await fetch(`/api/rental-contract/${contractId}`, {
+      // Fetch tenant data
+      const tenantRes = await fetch(`/api/tenant/${tenantId}`, {
         headers: { Authorization: `Bearer ${auth.token}` },
       });
-      const contractData = await contractRes.json();
+      const tenantData = await tenantRes.json();
 
-      if (contractData.success) {
-        setContract(contractData.contract);
-        // ใช้ข้อมูล room ที่มากับ contract แล้ว
-        setRoom(contractData.contract.room);
+      if (tenantData.success) {
+        setTenant(tenantData.tenant);
+        // ใช้ข้อมูล room ที่มากับ tenant แล้ว
+        setRoom(tenantData.tenant.room);
       }
     } catch (error) {
-      console.error("Error fetching contract data:", error);
+      console.error("Error fetching tenant data:", error);
     } finally {
       setLoading(false);
     }
   }
 
   function exportToPDF() {
-    if (!contract || !room) return;
+    if (!tenant || !room) return;
 
     const pdf = new jsPDF();
 
@@ -85,20 +85,20 @@ export default function ContractPreviewPage() {
     // ข้อมูลผู้เช่า
     pdf.text("ข้อมูลผู้เช่า:", 20, yPos);
     yPos += 10;
-    pdf.text(`ชื่อ: ${contract.tenantName}`, 20, yPos);
+    pdf.text(`ชื่อ: ${tenant.name}`, 20, yPos);
     yPos += 10;
-    pdf.text(`เลขบัตรประชาชน: ${contract.tenantIdCard || "-"}`, 20, yPos);
+    pdf.text(`เลขบัตรประชาชน: ${tenant.idCard || "-"}`, 20, yPos);
     yPos += 10;
-    pdf.text(`เบอร์โทรศัพท์: ${contract.tenantPhone}`, 20, yPos);
+    pdf.text(`เบอร์โทรศัพท์: ${tenant.phone}`, 20, yPos);
     yPos += 10;
-    pdf.text(`ที่อยู่: ${contract.tenantAddress}`, 20, yPos);
+    pdf.text(`ที่อยู่: ${tenant.address}`, 20, yPos);
     yPos += 20;
 
     // ข้อมูลสัญญา
     pdf.text("ข้อมูลสัญญา:", 20, yPos);
     yPos += 10;
     pdf.text(
-      `วันที่เริ่มสัญญา: ${new Date(contract.startDate).toLocaleDateString(
+      `วันที่เริ่มสัญญา: ${new Date(tenant.startDate).toLocaleDateString(
         "th-TH"
       )}`,
       20,
@@ -106,7 +106,7 @@ export default function ContractPreviewPage() {
     );
     yPos += 10;
     pdf.text(
-      `วันที่สิ้นสุดสัญญา: ${new Date(contract.endDate).toLocaleDateString(
+      `วันที่สิ้นสุดสัญญา: ${new Date(tenant.endDate).toLocaleDateString(
         "th-TH"
       )}`,
       20,
@@ -188,7 +188,7 @@ export default function ContractPreviewPage() {
     pdf.text(`วันที่: ${new Date().toLocaleDateString("th-TH")}`, 20, yPos);
 
     // ดาวน์โหลด PDF
-    pdf.save(`สัญญาเช่า_${contract.tenantName}_${room?.id || "N/A"}.pdf`);
+    pdf.save(`สัญญาเช่า_${tenant.name}_${room?.id || "N/A"}.pdf`);
   }
 
   if (loading) {
@@ -202,11 +202,11 @@ export default function ContractPreviewPage() {
     );
   }
 
-  if (!contract || !room) {
+  if (!tenant || !room) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 text-lg">ไม่พบข้อมูลสัญญาเช่า</p>
+          <p className="text-red-600 text-lg">ไม่พบข้อมูลผู้เช่า</p>
           <button
             onClick={() => window.close()}
             className="mt-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
@@ -322,31 +322,25 @@ export default function ContractPreviewPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <span className="font-medium text-gray-600">ชื่อ:</span>
-                <span className="ml-2 text-gray-800">
-                  {contract.tenantName}
-                </span>
+                <span className="ml-2 text-gray-800">{tenant.name}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-600">
                   เบอร์โทรศัพท์:
                 </span>
-                <span className="ml-2 text-gray-800">
-                  {contract.tenantPhone}
-                </span>
+                <span className="ml-2 text-gray-800">{tenant.phone}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-600">
                   เลขบัตรประชาชน:
                 </span>
                 <span className="ml-2 text-gray-800">
-                  {contract.tenantIdCard || "-"}
+                  {tenant.idCard || "-"}
                 </span>
               </div>
               <div className="md:col-span-2">
                 <span className="font-medium text-gray-600">ที่อยู่:</span>
-                <span className="ml-2 text-gray-800">
-                  {contract.tenantAddress}
-                </span>
+                <span className="ml-2 text-gray-800">{tenant.address}</span>
               </div>
             </div>
           </div>
@@ -362,7 +356,7 @@ export default function ContractPreviewPage() {
                   วันที่เริ่มสัญญา:
                 </span>
                 <span className="ml-2 text-gray-800">
-                  {new Date(contract.startDate).toLocaleDateString("th-TH")}
+                  {new Date(tenant.startDate).toLocaleDateString("th-TH")}
                 </span>
               </div>
               <div>
@@ -370,7 +364,7 @@ export default function ContractPreviewPage() {
                   วันที่สิ้นสุดสัญญา:
                 </span>
                 <span className="ml-2 text-gray-800">
-                  {new Date(contract.endDate).toLocaleDateString("th-TH")}
+                  {new Date(tenant.endDate).toLocaleDateString("th-TH")}
                 </span>
               </div>
             </div>
@@ -452,21 +446,30 @@ export default function ContractPreviewPage() {
           </div>
 
           {/* Signature */}
-          <div className="mt-12 grid grid-cols-2 gap-8 text-center">
-            <div>
-              <div className="border-b border-gray-400 pb-2 mb-2 mx-8"></div>
-              <p className="text-gray-600">ผู้ให้เช่า</p>
+          <div className="border-t pt-8 mt-8">
+            <div className="flex justify-between items-center">
+              <div className="text-center">
+                <div className="mb-4">
+                  <span className="text-gray-600">ผู้ให้เช่า:</span>
+                </div>
+                <div className="border-b border-gray-400 w-48 mx-auto mb-2"></div>
+                <div className="text-sm text-gray-600">
+                  ({room.dormitory?.owner?.name || "-"})
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="mb-4">
+                  <span className="text-gray-600">ผู้เช่า:</span>
+                </div>
+                <div className="border-b border-gray-400 w-48 mx-auto mb-2"></div>
+                <div className="text-sm text-gray-600">({tenant.name})</div>
+              </div>
             </div>
-            <div>
-              <div className="border-b border-gray-400 pb-2 mb-2 mx-8"></div>
-              <p className="text-gray-600">ผู้เช่า</p>
+            <div className="text-center mt-8">
+              <span className="text-gray-600">
+                วันที่: {new Date().toLocaleDateString("th-TH")}
+              </span>
             </div>
-          </div>
-
-          <div className="mt-8 text-center">
-            <p className="text-gray-600">
-              วันที่: {new Date().toLocaleDateString("th-TH")}
-            </p>
           </div>
         </div>
       </div>

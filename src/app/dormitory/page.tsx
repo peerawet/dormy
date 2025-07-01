@@ -145,7 +145,7 @@ export default function DormitoryPage() {
 
             {/* Stats */}
             {dorms.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-lg">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -180,25 +180,59 @@ export default function DormitoryPage() {
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-lg">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                      <span className="text-2xl">💰</span>
+                      <span className="text-2xl">👥</span>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-green-600">
-                        {dorms
-                          .reduce(
-                            (total, dorm) =>
-                              total +
-                              (dorm.rooms?.reduce(
-                                (roomTotal: number, room: any) =>
-                                  roomTotal + (room.price || 0),
-                                0
-                              ) || 0),
-                            0
-                          )
-                          .toLocaleString()}
+                        {dorms.reduce(
+                          (total, dorm) =>
+                            total +
+                            (dorm.rooms?.reduce(
+                              (roomTotal: number, room: any) =>
+                                roomTotal + (room.tenantRooms?.length || 0),
+                              0
+                            ) || 0),
+                          0
+                        )}
                       </div>
                       <div className="text-gray-600 text-sm">
-                        รายได้รวม/เดือน
+                        ผู้เช่าทั้งหมด
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                      <span className="text-2xl">📊</span>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-orange-600">
+                        {Math.round(
+                          (dorms.reduce(
+                            (total, dorm) =>
+                              total +
+                              (dorm.rooms?.filter(
+                                (room: any) =>
+                                  (room.tenantRooms?.length || 0) > 0
+                              ).length || 0),
+                            0
+                          ) /
+                            Math.max(
+                              dorms.reduce(
+                                (total, dorm) =>
+                                  total + (dorm.rooms?.length || 0),
+                                0
+                              ),
+                              1
+                            )) *
+                            100
+                        )}
+                        %
+                      </div>
+                      <div className="text-gray-600 text-sm">
+                        อัตราการเข้าพัก
                       </div>
                     </div>
                   </div>
@@ -292,118 +326,205 @@ export default function DormitoryPage() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {(dorm.rooms || []).map((room: any) => (
-                          <div
-                            key={room.id}
-                            className="group/room bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                          >
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-white">
-                                🏠
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-gray-800">
-                                  {room.name}
-                                </h4>
-                                <div className="text-sm text-gray-600">
-                                  ห้องพัก
+                        {(dorm.rooms || []).map((room: any) => {
+                          // Calculate room status
+                          const tenants = room.tenantRooms || [];
+                          const contracts = room.rentalContracts || [];
+                          const activeContracts = contracts.filter(
+                            (contract: any) => {
+                              const today = new Date();
+                              const start = new Date(contract.startDate);
+                              const end = new Date(contract.endDate);
+                              return today >= start && today <= end;
+                            }
+                          );
+
+                          const isOccupied = tenants.length > 0;
+                          const hasActiveContract = activeContracts.length > 0;
+
+                          // Get expiring contracts (within 30 days)
+                          const expiringContracts = contracts.filter(
+                            (contract: any) => {
+                              const today = new Date();
+                              const end = new Date(contract.endDate);
+                              const daysLeft = Math.ceil(
+                                (end.getTime() - today.getTime()) /
+                                  (1000 * 60 * 60 * 24)
+                              );
+                              return daysLeft > 0 && daysLeft <= 30;
+                            }
+                          );
+
+                          return (
+                            <div
+                              key={room.id}
+                              className="group/room bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                            >
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-white">
+                                  🏠
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-bold text-gray-800">
+                                    {room.name}
+                                  </h4>
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                                        isOccupied
+                                          ? "bg-green-100 text-green-800"
+                                          : "bg-gray-100 text-gray-600"
+                                      }`}
+                                    >
+                                      {isOccupied ? "🟢 มีผู้เช่า" : "⚪ ว่าง"}
+                                    </span>
+                                    {expiringContracts.length > 0 && (
+                                      <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                        ⚠️ ใกล้หมดสัญญา
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
 
-                            <div className="space-y-3 mb-6">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">
-                                  ค่าเช่า/เดือน
-                                </span>
-                                <span className="font-bold text-green-600">
-                                  ฿{room.price?.toLocaleString()}
-                                </span>
+                              {/* Tenant Information */}
+                              {isOccupied && (
+                                <div className="mb-4 p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-sm font-medium text-blue-800">
+                                      👥 ผู้เช่า ({tenants.length})
+                                    </span>
+                                  </div>
+                                  <div className="space-y-1">
+                                    {tenants
+                                      .slice(0, 2)
+                                      .map((tenantRoom: any, idx: number) => (
+                                        <div
+                                          key={idx}
+                                          className="text-sm text-gray-700"
+                                        >
+                                          •{" "}
+                                          {tenantRoom.tenant?.name ||
+                                            "ไม่ระบุชื่อ"}
+                                        </div>
+                                      ))}
+                                    {tenants.length > 2 && (
+                                      <div className="text-sm text-gray-500">
+                                        และอีก {tenants.length - 2} คน
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Active Contract Info */}
+                                  {activeContracts.length > 0 && (
+                                    <div className="mt-2 pt-2 border-t border-blue-200">
+                                      <div className="text-xs text-blue-600">
+                                        สัญญาหมดอายุ:{" "}
+                                        {new Date(
+                                          activeContracts[0].endDate
+                                        ).toLocaleDateString("th-TH")}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              <div className="space-y-3 mb-6">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-gray-600">
+                                    ค่าเช่า/เดือน
+                                  </span>
+                                  <span className="font-bold text-green-600">
+                                    ฿{room.price?.toLocaleString()}
+                                  </span>
+                                </div>
+
+                                {room.waterRate && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-600">
+                                      ค่าน้ำ/หน่วย
+                                    </span>
+                                    <span className="text-sm text-gray-700">
+                                      ฿{room.waterRate}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {room.electricRate && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-600">
+                                      ค่าไฟ/หน่วย
+                                    </span>
+                                    <span className="text-sm text-gray-700">
+                                      ฿{room.electricRate}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {room.waterFlat && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-600">
+                                      ค่าน้ำเหมา
+                                    </span>
+                                    <span className="text-sm text-gray-700">
+                                      ฿{room.waterFlat}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {room.electricFlat && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-600">
+                                      ค่าไฟเหมา
+                                    </span>
+                                    <span className="text-sm text-gray-700">
+                                      ฿{room.electricFlat}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {room.commonFee && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-600">
+                                      ค่าส่วนกลาง
+                                    </span>
+                                    <span className="text-sm text-gray-700">
+                                      ฿{room.commonFee}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {room.otherFee && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-600">
+                                      ค่าอื่นๆ
+                                    </span>
+                                    <span className="text-sm text-gray-700">
+                                      ฿{room.otherFee}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
 
-                              {room.waterRate && (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm text-gray-600">
-                                    ค่าน้ำ/หน่วย
-                                  </span>
-                                  <span className="text-sm text-gray-700">
-                                    ฿{room.waterRate}
-                                  </span>
-                                </div>
-                              )}
-
-                              {room.electricRate && (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm text-gray-600">
-                                    ค่าไฟ/หน่วย
-                                  </span>
-                                  <span className="text-sm text-gray-700">
-                                    ฿{room.electricRate}
-                                  </span>
-                                </div>
-                              )}
-
-                              {room.waterFlat && (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm text-gray-600">
-                                    ค่าน้ำเหมา
-                                  </span>
-                                  <span className="text-sm text-gray-700">
-                                    ฿{room.waterFlat}
-                                  </span>
-                                </div>
-                              )}
-
-                              {room.electricFlat && (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm text-gray-600">
-                                    ค่าไฟเหมา
-                                  </span>
-                                  <span className="text-sm text-gray-700">
-                                    ฿{room.electricFlat}
-                                  </span>
-                                </div>
-                              )}
-
-                              {room.commonFee && (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm text-gray-600">
-                                    ค่าส่วนกลาง
-                                  </span>
-                                  <span className="text-sm text-gray-700">
-                                    ฿{room.commonFee}
-                                  </span>
-                                </div>
-                              )}
-
-                              {room.otherFee && (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm text-gray-600">
-                                    ค่าอื่นๆ
-                                  </span>
-                                  <span className="text-sm text-gray-700">
-                                    ฿{room.otherFee}
-                                  </span>
-                                </div>
-                              )}
+                              <div className="flex gap-2">
+                                <Link
+                                  href={`/dormitory/${room.id}`}
+                                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-center py-2 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 text-sm"
+                                >
+                                  📋 ดูรายละเอียด
+                                </Link>
+                                <button
+                                  onClick={() =>
+                                    openEditRoomModal(room, dorm.id)
+                                  }
+                                  className="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-3 py-2 rounded-lg transition-all duration-300 hover:shadow-md"
+                                >
+                                  ✏️
+                                </button>
+                              </div>
                             </div>
-
-                            <div className="flex gap-2">
-                              <Link
-                                href={`/dormitory/${room.id}`}
-                                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-center py-2 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 text-sm"
-                              >
-                                📋 ดูรายละเอียด
-                              </Link>
-                              <button
-                                onClick={() => openEditRoomModal(room, dorm.id)}
-                                className="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-3 py-2 rounded-lg transition-all duration-300 hover:shadow-md"
-                              >
-                                ✏️
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>

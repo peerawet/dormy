@@ -35,7 +35,6 @@ model Room {
   price        Int
   dormitoryId  Int
   dormitory    Dormitory  @relation(fields: [dormitoryId], references: [id])
-  rentalContracts RentalContract[]
   waterRate    Int?
   electricRate Int?
   waterFlat    Int?
@@ -43,29 +42,53 @@ model Room {
   commonFee    Int?
   otherFee     Int?
   bills        Bill[]
+  tenantRooms  TenantRoom[]
+  rentalContracts RentalContract[]
+}
+
+model Tenant {
+  id         Int      @id @default(autoincrement())
+  name       String
+  phone      String
+  idCard     String?
+  address    String
+  password   String
+  rooms      TenantRoom[]
+  bills      Bill[]
+  rentalContracts RentalContract[]
+}
+
+model TenantRoom {
+  id       Int    @id @default(autoincrement())
+  tenantId Int
+  roomId   Int
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  room     Room   @relation(fields: [roomId], references: [id])
+  
+  @@unique([tenantId, roomId])
 }
 
 model RentalContract {
-  id         Int      @id @default(autoincrement())
-  tenantAddress String
-  startDate  DateTime
-  endDate    DateTime
-  tenantName String
-  tenantPhone String
-  tenantIdCard String?
-  roomId     Int
-  room       Room     @relation(fields: [roomId], references: [id])
+  id        Int      @id @default(autoincrement())
+  startDate DateTime
+  endDate   DateTime
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  roomId    Int
+  room      Room     @relation(fields: [roomId], references: [id])
 }
 
 model Bill {
   id        Int      @id @default(autoincrement())
   billDate  DateTime
-  tenantName String
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   water     Int
   electric  Int
   common    Int
   other     Int      @default(0)
   rent      Int
+  discount  Int      @default(0)
   total     Int
   meterWaterStart   Int?
   meterWaterEnd     Int?

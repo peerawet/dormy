@@ -25,7 +25,35 @@ export async function GET(req: Request) {
     );
   const dorms = await prisma.dormitory.findMany({
     where: { ownerId: userId },
-    include: { rooms: true },
+    include: {
+      rooms: {
+        include: {
+          tenantRooms: {
+            include: {
+              tenant: {
+                select: {
+                  id: true,
+                  name: true,
+                  phone: true,
+                  address: true,
+                },
+              },
+            },
+          },
+          rentalContracts: {
+            include: {
+              tenant: {
+                select: {
+                  id: true,
+                  name: true,
+                  phone: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
   return NextResponse.json({ success: true, dorms });
 }

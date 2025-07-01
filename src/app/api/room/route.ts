@@ -23,25 +23,51 @@ export async function GET(req: Request) {
       { success: false, message: "Unauthorized" },
       { status: 401 }
     );
+
   const { dormitoryId } = Object.fromEntries(new URL(req.url).searchParams);
-  if (!dormitoryId)
-    return NextResponse.json(
-      { success: false, message: "ต้องระบุ dormitoryId" },
-      { status: 400 }
-    );
-  // ตรวจสอบสิทธิ์
-  const dorm = await prisma.dormitory.findFirst({
-    where: { id: Number(dormitoryId), ownerId: userId },
-  });
-  if (!dorm)
-    return NextResponse.json(
-      { success: false, message: "Unauthorized" },
-      { status: 401 }
-    );
-  const rooms = await prisma.room.findMany({
-    where: { dormitoryId: Number(dormitoryId) },
-  });
-  return NextResponse.json({ success: true, rooms });
+
+  if (dormitoryId) {
+    // ถ้าระบุ dormitoryId ให้ดึงห้องของหอพักนั้นเท่านั้น
+    const dorm = await prisma.dormitory.findFirst({
+      where: { id: Number(dormitoryId), ownerId: userId },
+    });
+    if (!dorm)
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    const rooms = await prisma.room.findMany({
+      where: { dormitoryId: Number(dormitoryId) },
+      include: {
+        dormitory: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+    return NextResponse.json({ success: true, rooms });
+  } else {
+    // ถ้าไม่ระบุ dormitoryId ให้ดึงห้องทั้งหมดของ user
+    const rooms = await prisma.room.findMany({
+      where: {
+        dormitory: {
+          ownerId: userId,
+        },
+      },
+      include: {
+        dormitory: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: [{ dormitory: { name: "asc" } }, { name: "asc" }],
+    });
+    return NextResponse.json({ success: true, rooms });
+  }
 }
 
 export async function POST(req: Request) {

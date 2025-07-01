@@ -25,7 +25,7 @@ interface RoomState {
   currentDormitory: Dormitory | null;
   loading: boolean;
   error: string | null;
-  activeTab: "tenant" | "bill";
+  activeTab: "contract" | "bill";
 }
 
 const initialState: RoomState = {
@@ -33,7 +33,7 @@ const initialState: RoomState = {
   currentDormitory: null,
   loading: false,
   error: null,
-  activeTab: "tenant",
+  activeTab: "contract",
 };
 
 // Async thunk สำหรับ fetch room detail
@@ -145,14 +145,14 @@ const roomSlice = createSlice({
   name: "room",
   initialState,
   reducers: {
-    setActiveTab: (state, action: PayloadAction<"tenant" | "bill">) => {
+    setActiveTab: (state, action: PayloadAction<"contract" | "bill">) => {
       state.activeTab = action.payload;
     },
     clearRoomData: (state) => {
       state.currentRoom = null;
       state.currentDormitory = null;
       state.error = null;
-      state.activeTab = "tenant";
+      state.activeTab = "contract";
     },
     clearError: (state) => {
       state.error = null;

@@ -29,7 +29,7 @@ export async function PUT(
     );
 
   const body = await req.json();
-  const { roomId, billDate } = body;
+  const { roomId, billDate, tenantId } = body;
   const billId = Number(id);
 
   if (!roomId)
@@ -50,27 +50,59 @@ export async function PUT(
       { status: 401 }
     );
 
+  // ตรวจสอบว่า tenant อยู่ในห้องนี้ (ถ้ามีการเปลี่ยน tenantId)
+  if (tenantId) {
+    const tenant = await prisma.tenant.findFirst({
+      where: {
+        id: Number(tenantId),
+        rooms: {
+          some: {
+            roomId: Number(roomId),
+          },
+        },
+      },
+    });
+    if (!tenant)
+      return NextResponse.json(
+        { success: false, message: "ไม่พบผู้เช่าในห้องนี้" },
+        { status: 400 }
+      );
+  }
+
+  const updateData: any = {
+    billDate: billDate ? new Date(billDate) : undefined,
+    water: Number(body.water) || 0,
+    electric: Number(body.electric) || 0,
+    common: Number(body.common) || 0,
+    other: Number(body.other) || 0,
+    rent: Number(body.rent) || 0,
+    discount: Number(body.discount) || 0,
+    total: Number(body.total) || 0,
+    meterWaterStart: body.meterWaterStart ? Number(body.meterWaterStart) : null,
+    meterWaterEnd: body.meterWaterEnd ? Number(body.meterWaterEnd) : null,
+    meterElectricStart: body.meterElectricStart
+      ? Number(body.meterElectricStart)
+      : null,
+    meterElectricEnd: body.meterElectricEnd
+      ? Number(body.meterElectricEnd)
+      : null,
+  };
+
+  if (tenantId) {
+    updateData.tenantId = Number(tenantId);
+  }
+
   const bill = await prisma.bill.update({
     where: { id: billId },
-    data: {
-      billDate: billDate ? new Date(billDate) : undefined,
-      tenantName: body.tenantName,
-      water: Number(body.water) || 0,
-      electric: Number(body.electric) || 0,
-      common: Number(body.common) || 0,
-      other: Number(body.other) || 0,
-      rent: Number(body.rent) || 0,
-      total: Number(body.total) || 0,
-      meterWaterStart: body.meterWaterStart
-        ? Number(body.meterWaterStart)
-        : null,
-      meterWaterEnd: body.meterWaterEnd ? Number(body.meterWaterEnd) : null,
-      meterElectricStart: body.meterElectricStart
-        ? Number(body.meterElectricStart)
-        : null,
-      meterElectricEnd: body.meterElectricEnd
-        ? Number(body.meterElectricEnd)
-        : null,
+    data: updateData,
+    include: {
+      tenant: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+        },
+      },
     },
   });
 
