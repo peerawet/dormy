@@ -31,6 +31,8 @@ export function ContractModal({
     tenantId: string;
     startDate: string;
     endDate: string;
+    deposit: string;
+    insurance: string;
   };
 
   const [form, setForm] = useState<FormType>(
@@ -43,11 +45,15 @@ export function ContractModal({
           endDate: initial.endDate
             ? new Date(initial.endDate).toISOString().split("T")[0]
             : "",
+          deposit: initial.deposit ? String(initial.deposit) : "",
+          insurance: initial.insurance ? String(initial.insurance) : "",
         }
       : {
           tenantId: "",
           startDate: "",
           endDate: "",
+          deposit: "",
+          insurance: "",
         }
   );
 
@@ -75,6 +81,24 @@ export function ContractModal({
               };
         },
       ],
+      deposit: [
+        (value: string) => {
+          if (!value) return { isValid: true, message: "" };
+          const num = Number(value);
+          return !isNaN(num) && num >= 0
+            ? { isValid: true, message: "" }
+            : { isValid: false, message: "มัดจำต้องเป็นตัวเลขที่ไม่ติดลบ" };
+        },
+      ],
+      insurance: [
+        (value: string) => {
+          if (!value) return { isValid: true, message: "" };
+          const num = Number(value);
+          return !isNaN(num) && num >= 0
+            ? { isValid: true, message: "" }
+            : { isValid: false, message: "ประกันต้องเป็นตัวเลขที่ไม่ติดลบ" };
+        },
+      ],
     }),
     [form.startDate]
   );
@@ -99,11 +123,15 @@ export function ContractModal({
             endDate: initial.endDate
               ? new Date(initial.endDate).toISOString().split("T")[0]
               : "",
+            deposit: initial.deposit ? String(initial.deposit) : "",
+            insurance: initial.insurance ? String(initial.insurance) : "",
           }
         : {
             tenantId: "",
             startDate: "",
             endDate: "",
+            deposit: "",
+            insurance: "",
           }
     );
     setFieldErrors({});
@@ -113,10 +141,19 @@ export function ContractModal({
   const handleSave = () => {
     setHasSubmitted(true);
     if (isFormValid) {
-      const formData: any = { ...form, roomId: Number(roomId) };
+      const formData: any = {
+        ...form,
+        roomId: Number(roomId),
+        deposit: form.deposit ? Number(form.deposit) : undefined,
+        insurance: form.insurance ? Number(form.insurance) : undefined,
+      };
       if (initial) {
         formData.id = initial.id;
       }
+
+      // Debug logging
+      console.log("🔄 ContractModal - Sending form data:", formData);
+
       onSave(formData);
     }
   };
@@ -212,6 +249,33 @@ export function ContractModal({
                 type="date"
                 required
                 icon="📅"
+                disabled={loading}
+              />
+            </div>
+
+            {/* มัดจำและประกัน */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ValidatedInput
+                label="มัดจำ"
+                value={form.deposit}
+                onChange={(value) => setForm((f) => ({ ...f, deposit: value }))}
+                validation={fieldErrors.deposit}
+                type="number"
+                placeholder="กรอกจำนวนเงินมัดจำ (บาท)"
+                icon="💰"
+                disabled={loading}
+              />
+
+              <ValidatedInput
+                label="ประกัน"
+                value={form.insurance}
+                onChange={(value) =>
+                  setForm((f) => ({ ...f, insurance: value }))
+                }
+                validation={fieldErrors.insurance}
+                type="number"
+                placeholder="กรอกจำนวนเงินประกัน (บาท)"
+                icon="🛡️"
                 disabled={loading}
               />
             </div>

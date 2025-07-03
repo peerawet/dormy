@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import ProtectedRoute from "@/app/components/ProtectedRoute";
+import BillReceiptDisplay from "@/app/components/BillReceiptDisplay";
 
 interface BillDetail {
   id: number;
@@ -78,7 +79,26 @@ function BillReceiptContent() {
   }, [billId, auth.token]);
 
   const handlePrint = () => {
+    // Save the original title
+    const originalTitle = document.title;
+
+    // Format the date as dd-mm-yyyy
+    const billDateFormatted = new Date(bill!.billDate)
+      .toLocaleDateString("en-GB")
+      .replace(/\//g, "-");
+
+    // Set the document title for the filename
+    document.title = `${bill!.room.dormitory.name}-${
+      bill!.room.name
+    }-${billDateFormatted}`;
+
+    // Print the document
     window.print();
+
+    // Restore the original title after printing
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
   };
 
   if (loading) {
@@ -146,192 +166,7 @@ function BillReceiptContent() {
           </button>
         </div>
 
-        <div className="bg-white shadow-xl rounded-lg overflow-hidden print:shadow-none print:rounded-none">
-          <div className="bg-blue-600 text-white p-6 text-center print:p-4">
-            <h1 className="text-3xl font-bold print:text-xl">ใบเสร็จรับเงิน</h1>
-          </div>
-
-          <div className="p-8 print:p-4">
-            <div className="text-center mb-8 print:mb-4">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2 print:text-lg print:mb-1">
-                {bill.room.dormitory.name}
-              </h2>
-              <p className="text-gray-600 mb-1 print:text-sm print:mb-0">
-                {bill.room.dormitory.address}
-              </p>
-              <p className="text-gray-600 print:text-sm">
-                โทรศัพท์: {bill.room.dormitory.owner.phone}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 print:gap-4 print:mb-4">
-              <div className="space-y-3 print:space-y-2">
-                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 print:text-base print:pb-1">
-                  📋 ข้อมูลใบเสร็จ
-                </h3>
-                <div className="space-y-2 print:space-y-1">
-                  <p className="print:text-sm">
-                    <span className="font-medium">เลขที่ใบเสร็จ:</span>{" "}
-                    {bill.id.toString().padStart(6, "0")}
-                  </p>
-                  <p className="print:text-sm">
-                    <span className="font-medium">วันที่:</span>{" "}
-                    {formatDate(bill.billDate)}
-                  </p>
-                  <p className="print:text-sm">
-                    <span className="font-medium">ห้อง:</span> {bill.room.name}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3 print:space-y-2">
-                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 print:text-base print:pb-1">
-                  👤 ข้อมูลผู้เช่า
-                </h3>
-                <div className="space-y-2 print:space-y-1">
-                  <p className="print:text-sm">
-                    <span className="font-medium">ชื่อ:</span>{" "}
-                    {bill.tenant.name}
-                  </p>
-                  <p className="print:text-sm">
-                    <span className="font-medium">โทรศัพท์:</span>{" "}
-                    {bill.tenant.phone}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-8 print:mb-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4 print:text-base print:pb-1 print:mb-2">
-                💰 รายการค่าใช้จ่าย
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full border border-gray-200 rounded-lg overflow-hidden print:text-sm">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="text-left p-4 font-semibold print:p-2">
-                        รายการ
-                      </th>
-                      <th className="text-right p-4 font-semibold print:p-2">
-                        จำนวนเงิน (บาท)
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-t">
-                      <td className="p-4 print:p-2">🏠 ค่าเช่าห้อง</td>
-                      <td className="p-4 text-right print:p-2">
-                        {formatNumber(bill.rent)}
-                      </td>
-                    </tr>
-                    {bill.water > 0 && (
-                      <tr className="border-t">
-                        <td className="p-4 print:p-2">
-                          💧 ค่าน้ำประปา
-                          {bill.meterWaterStart !== null &&
-                            bill.meterWaterEnd !== null && (
-                              <span className="text-sm text-gray-600 print:text-xs">
-                                {" "}
-                                ({formatNumber(bill.meterWaterStart)} -{" "}
-                                {formatNumber(bill.meterWaterEnd)} ={" "}
-                                {formatNumber(waterUnits!)} หน่วย)
-                              </span>
-                            )}
-                        </td>
-                        <td className="p-4 text-right print:p-2">
-                          {formatNumber(bill.water)}
-                        </td>
-                      </tr>
-                    )}
-                    {bill.electric > 0 && (
-                      <tr className="border-t">
-                        <td className="p-4 print:p-2">
-                          ⚡ ค่าไฟฟ้า
-                          {bill.meterElectricStart !== null &&
-                            bill.meterElectricEnd !== null && (
-                              <span className="text-sm text-gray-600 print:text-xs">
-                                {" "}
-                                ({formatNumber(bill.meterElectricStart)} -{" "}
-                                {formatNumber(bill.meterElectricEnd)} ={" "}
-                                {formatNumber(electricUnits!)} หน่วย)
-                              </span>
-                            )}
-                        </td>
-                        <td className="p-4 text-right print:p-2">
-                          {formatNumber(bill.electric)}
-                        </td>
-                      </tr>
-                    )}
-                    {bill.common > 0 && (
-                      <tr className="border-t">
-                        <td className="p-4 print:p-2">🏢 ค่าส่วนกลาง</td>
-                        <td className="p-4 text-right print:p-2">
-                          {formatNumber(bill.common)}
-                        </td>
-                      </tr>
-                    )}
-                    {bill.other > 0 && (
-                      <tr className="border-t">
-                        <td className="p-4 print:p-2">📦 อื่นๆ</td>
-                        <td className="p-4 text-right print:p-2">
-                          {formatNumber(bill.other)}
-                        </td>
-                      </tr>
-                    )}
-                    {bill.discount > 0 && (
-                      <tr className="border-t">
-                        <td className="p-4 text-green-600 print:p-2">
-                          🎁 ส่วนลด
-                        </td>
-                        <td className="p-4 text-right text-green-600 print:p-2">
-                          -{formatNumber(bill.discount)}
-                        </td>
-                      </tr>
-                    )}
-                    <tr className="border-t-2 border-gray-400 bg-blue-50">
-                      <td className="p-4 font-bold text-lg print:p-2 print:text-base">
-                        รวมเป็นเงิน
-                      </td>
-                      <td className="p-4 text-right font-bold text-lg text-blue-700 print:p-2 print:text-base">
-                        {formatNumber(bill.total)}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {bill.room.dormitory.owner.promptpay && (
-              <div className="mb-8 bg-green-50 border border-green-200 rounded-lg p-6 print:mb-4 print:p-3">
-                <h3 className="text-lg font-semibold text-green-800 mb-3 print:text-base print:mb-2">
-                  💳 ช่องทางการชำระเงิน
-                </h3>
-                <div className="flex items-center gap-3 print:gap-2">
-                  <span className="text-2xl print:text-lg">💰</span>
-                  <p className="font-medium print:text-sm">
-                    PromptPay - {bill.room.dormitory.owner.name}:{" "}
-                    <span className="text-green-700 font-mono">
-                      {bill.room.dormitory.owner.promptpay}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="text-center text-gray-500 text-sm pt-6 border-t print:pt-3 print:text-xs">
-              <p>
-                วันที่พิมพ์:{" "}
-                {new Date().toLocaleDateString("th-TH", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
-          </div>
-        </div>
+        <BillReceiptDisplay bill={bill} />
       </div>
 
       <style jsx global>{`

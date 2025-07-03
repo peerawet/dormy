@@ -17,6 +17,8 @@ model User {
   address  String?
   idCard   String?
   promptpay String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
   dormitories Dormitory[]
 }
 
@@ -25,8 +27,11 @@ model Dormitory {
   name      String
   address   String
   ownerId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
   owner     User     @relation(fields: [ownerId], references: [id])
   rooms     Room[]
+  expenses  Expense[]
 }
 
 model Room {
@@ -34,16 +39,19 @@ model Room {
   name         String
   price        Int
   dormitoryId  Int
-  dormitory    Dormitory  @relation(fields: [dormitoryId], references: [id])
   waterRate    Float?
   electricRate Float?
   waterFlat    Int?
   electricFlat Int?
   commonFee    Int?
   otherFee     Int?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+  dormitory    Dormitory  @relation(fields: [dormitoryId], references: [id])
   bills        Bill[]
   tenantRooms  TenantRoom[]
   rentalContracts RentalContract[]
+  expenses     Expense[]
 }
 
 model Tenant {
@@ -53,6 +61,8 @@ model Tenant {
   idCard     String?
   address    String
   password   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
   rooms      TenantRoom[]
   bills      Bill[]
   rentalContracts RentalContract[]
@@ -62,6 +72,7 @@ model TenantRoom {
   id       Int    @id @default(autoincrement())
   tenantId Int
   roomId   Int
+  createdAt DateTime @default(now())
   tenant   Tenant @relation(fields: [tenantId], references: [id])
   room     Room   @relation(fields: [roomId], references: [id])
   
@@ -72,9 +83,13 @@ model RentalContract {
   id        Int      @id @default(autoincrement())
   startDate DateTime
   endDate   DateTime
+  deposit   Int?
+  insurance Int?
   tenantId  Int
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   roomId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   room      Room     @relation(fields: [roomId], references: [id])
 }
 
@@ -82,7 +97,6 @@ model Bill {
   id        Int      @id @default(autoincrement())
   billDate  DateTime
   tenantId  Int
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   water     Int
   electric  Int
   common    Int
@@ -95,5 +109,23 @@ model Bill {
   meterElectricStart Int?
   meterElectricEnd   Int?
   roomId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   room      Room     @relation(fields: [roomId], references: [id])
+}
+
+model Expense {
+  id           Int       @id @default(autoincrement())
+  dormitoryId  Int
+  roomId       Int?      // Optional - ค่าใช้จ่ายเฉพาะห้อง (ถ้าไม่ระบุ = ค่าใช้จ่ายทั้งหอพัก)
+  type         String    // ประเภทค่าใช้จ่าย เช่น "water", "electric", "maintenance", "cleaning", "repair", "other"
+  description  String    // รายละเอียดค่าใช้จ่าย
+  amount       Float     // จำนวนเงิน
+  expenseDate  DateTime  // วันที่เกิดค่าใช้จ่าย
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
+  dormitory    Dormitory @relation(fields: [dormitoryId], references: [id])
+  room         Room?     @relation(fields: [roomId], references: [id])
+  
 }

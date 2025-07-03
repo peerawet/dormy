@@ -56,6 +56,17 @@ export const validators = {
     };
   },
 
+  nonNegativeNumber: (value: string, fieldName: string): ValidationResult => {
+    const numValue = Number(value);
+    const isValid = !isNaN(numValue) && isFinite(numValue) && numValue >= 0;
+    return {
+      isValid,
+      message: isValid
+        ? ""
+        : `${fieldName}ต้องเป็นตัวเลขที่มากกว่าหรือเท่ากับ 0`,
+    };
+  },
+
   phone: (value: string): ValidationResult => {
     const phoneRegex = /^[0-9]{9,10}$/;
     const isValid = phoneRegex.test(value.replace(/[-\s]/g, ""));

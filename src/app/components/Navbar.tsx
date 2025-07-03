@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "@/store";
+import { RootState, AppDispatch } from "@/store";
 import { logout } from "@/store/authSlice";
-import { useRouter } from "next/navigation";
+import { fetchDorms } from "@/store/dormSlice";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import ProfileModal from "./ProfileModal";
 
@@ -12,9 +13,14 @@ export default function Navbar() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [managementDropdownOpen, setManagementDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
   const auth = useSelector((state: RootState) => state.auth);
-  const dispatch = useDispatch();
+  const { dorms: dormitories, loading: loadingDorms } = useSelector(
+    (state: RootState) => state.dorm
+  );
+  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = () => {
     dispatch(logout());
@@ -27,6 +33,18 @@ export default function Navbar() {
   const closeAllDropdowns = () => {
     setManagementDropdownOpen(false);
     setUserDropdownOpen(false);
+  };
+
+  // Fetch dormitories using Redux
+  useEffect(() => {
+    if (auth.token && dormitories.length === 0) {
+      dispatch(fetchDorms(auth.token));
+    }
+  }, [auth.token, dispatch, dormitories.length]);
+
+  // Check if current path matches room
+  const isCurrentRoom = (roomId: number) => {
+    return pathname === `/dormitory/${roomId}`;
   };
 
   return (
@@ -271,6 +289,75 @@ export default function Navbar() {
                           </div>
                         </Link>
 
+                        {/* Desktop Dormitory & Rooms Quick Access */}
+                        {dormitories.length > 0 && (
+                          <div className="mx-2 mt-2 border-t border-gray-100 pt-2">
+                            <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                              เข้าถึงด่วน
+                            </div>
+                            <div className="max-h-64 overflow-y-auto space-y-1">
+                              {dormitories.map((dormitory) => (
+                                <div key={dormitory.id} className="mb-2">
+                                  {/* Dormitory Header */}
+                                  <div className="px-2 py-1 bg-gray-50 rounded-lg mb-1">
+                                    <div className="text-xs font-semibold text-gray-700">
+                                      🏢 {dormitory.name}
+                                    </div>
+                                  </div>
+
+                                  {/* Rooms List */}
+                                  {dormitory.rooms &&
+                                    dormitory.rooms.length > 0 && (
+                                      <div className="ml-2 space-y-1">
+                                        {dormitory.rooms.map((room) => {
+                                          const isActive = isCurrentRoom(
+                                            room.id
+                                          );
+                                          return (
+                                            <Link
+                                              key={room.id}
+                                              href={`/dormitory/${room.id}`}
+                                              onClick={closeAllDropdowns}
+                                              className={`group flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all duration-200 ${
+                                                isActive
+                                                  ? "bg-blue-100 text-blue-700 border border-blue-200"
+                                                  : "text-gray-600 hover:text-blue-600 hover:bg-blue-50/50"
+                                              }`}
+                                            >
+                                              <div
+                                                className={`w-5 h-5 rounded-md flex items-center justify-center text-xs ${
+                                                  isActive
+                                                    ? "bg-blue-200 text-blue-800"
+                                                    : "bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600"
+                                                }`}
+                                              >
+                                                🏠
+                                              </div>
+                                              <div className="flex flex-col flex-1">
+                                                <span className="text-xs font-medium">
+                                                  {room.name}
+                                                </span>
+                                                <span className="text-xs opacity-70">
+                                                  ฿
+                                                  {room.price?.toLocaleString()}
+                                                </span>
+                                              </div>
+                                              {isActive && (
+                                                <div className="text-blue-600 text-xs">
+                                                  ●
+                                                </div>
+                                              )}
+                                            </Link>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <Link
                           href="/tenants"
                           className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200 mx-2 rounded-lg"
@@ -283,6 +370,22 @@ export default function Navbar() {
                             <span className="font-medium">ผู้เช่า</span>
                             <span className="text-xs text-gray-500">
                               จัดการข้อมูลผู้เช่า
+                            </span>
+                          </div>
+                        </Link>
+
+                        <Link
+                          href="/expenses"
+                          className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200 mx-2 rounded-lg"
+                          onClick={closeAllDropdowns}
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center group-hover:from-orange-200 group-hover:to-orange-300 transition-all duration-200">
+                            <span className="text-sm">💰</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">ค่าใช้จ่าย</span>
+                            <span className="text-xs text-gray-500">
+                              จัดการค่าใช้จ่ายหอพัก
                             </span>
                           </div>
                         </Link>
@@ -467,6 +570,66 @@ export default function Navbar() {
                         </div>
                       </Link>
 
+                      {/* Mobile Dormitory Rooms Quick Access - Show All Rooms */}
+                      {dormitories.length > 0 && (
+                        <div className="ml-6 space-y-1 max-h-96 overflow-y-auto">
+                          {dormitories.map((dormitory) => (
+                            <div key={dormitory.id} className="mb-3">
+                              <div className="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                🏢 {dormitory.name}
+                              </div>
+                              {dormitory.rooms &&
+                                dormitory.rooms.length > 0 && (
+                                  <div className="space-y-1">
+                                    {dormitory.rooms.map((room) => {
+                                      const isActive = isCurrentRoom(room.id);
+                                      return (
+                                        <Link
+                                          key={room.id}
+                                          href={`/dormitory/${room.id}`}
+                                          onClick={() => setOpen(false)}
+                                          className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                                            isActive
+                                              ? "bg-blue-100 text-blue-700 border border-blue-200"
+                                              : "text-gray-600 hover:text-blue-600 hover:bg-blue-50/80"
+                                          }`}
+                                        >
+                                          <div
+                                            className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${
+                                              isActive
+                                                ? "bg-blue-200 text-blue-800"
+                                                : "bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600"
+                                            }`}
+                                          >
+                                            🏠
+                                          </div>
+                                          <div className="flex flex-col flex-1">
+                                            <span className="text-sm font-medium">
+                                              {room.name}
+                                            </span>
+                                            <span className="text-xs opacity-70">
+                                              ฿{room.price?.toLocaleString()}
+                                              /เดือน
+                                            </span>
+                                          </div>
+                                          {isActive && (
+                                            <div className="text-blue-600 text-xs">
+                                              ●
+                                            </div>
+                                          )}
+                                          <div className="ml-auto text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            →
+                                          </div>
+                                        </Link>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       <Link
                         href="/tenants"
                         className="group flex items-center gap-4 px-4 py-3 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 transition-all duration-300 font-medium"
@@ -479,6 +642,27 @@ export default function Navbar() {
                           <span className="text-base font-medium">ผู้เช่า</span>
                           <span className="text-sm text-gray-500">
                             จัดการข้อมูลผู้เช่า
+                          </span>
+                        </div>
+                        <div className="ml-auto text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          →
+                        </div>
+                      </Link>
+
+                      <Link
+                        href="/expenses"
+                        className="group flex items-center gap-4 px-4 py-3 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 transition-all duration-300 font-medium"
+                        onClick={() => setOpen(false)}
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center group-hover:from-orange-200 group-hover:to-orange-300 transition-all duration-300">
+                          <span className="text-lg">💰</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-base font-medium">
+                            ค่าใช้จ่าย
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            จัดการค่าใช้จ่ายหอพัก
                           </span>
                         </div>
                         <div className="ml-auto text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

@@ -4,6 +4,8 @@ interface RentalContract {
   id: number;
   startDate: string;
   endDate: string;
+  deposit?: number;
+  insurance?: number;
   tenantId: number;
   tenant: {
     id: number;
@@ -17,6 +19,8 @@ interface RentalContractFormData {
   tenantId: number;
   startDate: string;
   endDate: string;
+  deposit?: number;
+  insurance?: number;
   roomId: number;
 }
 

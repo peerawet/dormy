@@ -4,14 +4,42 @@ interface Room {
   id: number;
   name: string;
   price: number;
-  floor?: number;
   waterRate?: number; // Float - supports decimal values like 3.50
   electricRate?: number; // Float - supports decimal values like 4.25
   waterFlat?: number;
   electricFlat?: number;
   commonFee?: number;
   otherFee?: number;
-  rentalContracts?: any[];
+  createdAt: string;
+  updatedAt: string;
+  tenantRooms?: {
+    id: number;
+    tenantId: number;
+    roomId: number;
+    tenant: {
+      id: number;
+      name: string;
+      phone: string;
+      idCard?: string;
+      address: string;
+    };
+  }[];
+  rentalContracts?: {
+    id: number;
+    startDate: string;
+    endDate: string;
+    deposit?: number;
+    insurance?: number;
+    tenantId: number;
+    roomId: number;
+    tenant: {
+      id: number;
+      name: string;
+      phone: string;
+      idCard?: string;
+      address: string;
+    };
+  }[];
 }
 
 interface Dormitory {
@@ -33,7 +61,7 @@ const initialState: RoomState = {
   currentDormitory: null,
   loading: false,
   error: null,
-  activeTab: "contract",
+  activeTab: "bill",
 };
 
 // Async thunk สำหรับ fetch room detail
@@ -56,7 +84,7 @@ export const fetchRoomDetail = createAsyncThunk(
       return rejectWithValue("Network error");
     }
   }
-);
+); 
 
 // Room CRUD thunks
 export const addRoom = createAsyncThunk(
@@ -152,7 +180,7 @@ const roomSlice = createSlice({
       state.currentRoom = null;
       state.currentDormitory = null;
       state.error = null;
-      state.activeTab = "contract";
+      state.activeTab = "bill";
     },
     clearError: (state) => {
       state.error = null;

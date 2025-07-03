@@ -20,7 +20,6 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
   const userId = getUserIdFromAuth(req);
   if (!userId)
     return NextResponse.json(
@@ -28,55 +27,65 @@ export async function GET(
       { status: 401 }
     );
 
-  const contractId = Number(id);
+  const contractId = (await params).id;
 
-  // ดึงข้อมูล rental contract พร้อมข้อมูลที่เกี่ยวข้องทั้งหมด
-  const contract = await prisma.rentalContract.findUnique({
-    where: { id: contractId },
-    include: {
-      tenant: {
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          idCard: true,
-          address: true,
+  try {
+    const contract = await prisma.rentalContract.findUnique({
+      where: { id: Number(contractId) },
+      include: {
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            idCard: true,
+            address: true,
+          },
         },
-      },
-      room: {
-        include: {
-          dormitory: {
-            include: {
-              owner: {
-                select: {
-                  id: true,
-                  name: true,
-                  phone: true,
-                  address: true,
-                  idCard: true,
+        room: {
+          include: {
+            dormitory: {
+              include: {
+                owner: {
+                  select: {
+                    id: true,
+                    name: true,
+                    phone: true,
+                    address: true,
+                    idCard: true,
+                    promptpay: true,
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-  });
+    });
 
-  if (!contract)
+    if (!contract) {
+      return NextResponse.json(
+        { success: false, message: "ไม่พบข้อมูลสัญญา" },
+        { status: 404 }
+      );
+    }
+
+    // ตรวจสอบสิทธิ์ - เจ้าของหอพักต้องเป็นคนเดียวกับที่ login
+    if (contract.room.dormitory.ownerId !== userId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    return NextResponse.json({ success: true, contract });
+  } catch (error: any) {
+    console.error("Error fetching contract:", error);
     return NextResponse.json(
-      { success: false, message: "ไม่พบสัญญาเช่า" },
-      { status: 404 }
+      { success: false, message: "เกิดข้อผิดพลาดในการดึงข้อมูล" },
+      { status: 500 }
     );
-
-  // ตรวจสอบสิทธิ์ - ต้องเป็นเจ้าของหอพัก
-  if (contract.room.dormitory.ownerId !== userId)
-    return NextResponse.json(
-      { success: false, message: "Unauthorized" },
-      { status: 401 }
-    );
-
-  return NextResponse.json({ success: true, contract });
+  }
 }
 
 export async function PUT(

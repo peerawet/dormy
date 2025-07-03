@@ -5,6 +5,9 @@ import { RootState, AppDispatch } from "@/store";
 import BillModal from "@/app/components/BillModal";
 import ConfirmDeleteModal from "@/app/components/ConfirmDeleteModal";
 import ImportExcelModal from "@/app/components/ImportExcelModal";
+import BillHeader from "@/app/components/BillHeader";
+import BillCardList from "@/app/components/BillCardList";
+import BillTable from "@/app/components/BillTable";
 import {
   fetchBills,
   addBill,
@@ -26,6 +29,10 @@ export default function BillTab({
   const [editBill, setEditBill] = useState<any | null>(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [billToDelete, setBillToDelete] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<"table" | "card">(
+    typeof window !== "undefined" && window.innerWidth < 768 ? "card" : "table"
+  );
+
   const dispatch = useDispatch<AppDispatch>();
   const auth = useSelector((state: RootState) => state.auth);
   const { bills, loading, error } = useSelector(
@@ -153,6 +160,11 @@ export default function BillTab({
     }
   };
 
+  const handleDeleteClick = (bill: any) => {
+    setBillToDelete(bill);
+    setConfirmModalOpen(true);
+  };
+
   useEffect(() => {
     if (auth.token && roomId) {
       dispatch(fetchBills({ roomId, token: auth.token }));
@@ -166,28 +178,16 @@ export default function BillTab({
 
   return (
     <div className="bg-white rounded-xl shadow-xl p-0 overflow-visible">
-      <div className="bg-blue-50 px-6 py-4 border-b flex items-center justify-between">
-        <h3 className="font-bold text-lg text-blue-900 flex items-center gap-2">
-          <span>💸</span> บิลค่าเช่า
-        </h3>
-        <div className="flex gap-2">
-          <button
-            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
-            onClick={() => setImportModalOpen(true)}
-          >
-            📊 Import Excel
-          </button>
-          <button
-            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-            onClick={() => {
-              setEditBill(null);
-              setModalOpen(true);
-            }}
-          >
-            + เพิ่มบิล
-          </button>
-        </div>
-      </div>
+      <BillHeader
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onAddBill={() => {
+          setEditBill(null);
+          setModalOpen(true);
+        }}
+        onImportExcel={() => setImportModalOpen(true)}
+      />
+
       <BillModal
         open={modalOpen}
         onClose={() => {
@@ -223,6 +223,7 @@ export default function BillTab({
           billToDelete?.tenant?.name || "ผู้เช่าคนนี้"
         }?`}
       />
+
       <div className="bg-gray-50 px-6 py-6">
         {loading ? (
           <div className="text-center text-gray-500">กำลังโหลด...</div>
@@ -230,107 +231,18 @@ export default function BillTab({
           <div className="text-center text-red-600">{error}</div>
         ) : bills.length === 0 ? (
           <div className="text-center text-gray-500">ยังไม่มีบิล</div>
+        ) : viewMode === "card" ? (
+          <BillCardList
+            bills={bills}
+            onEdit={handleEditBill}
+            onDelete={handleDeleteClick}
+          />
         ) : (
-          <div className="overflow-x-auto overflow-hidden rounded-xl">
-            <table className="w-full min-w-max text-left border border-blue-100 text-sm">
-              <thead>
-                <tr className="bg-blue-100 text-blue-900">
-                  <th className="p-3 font-semibold whitespace-nowrap">
-                    วันที่บิล
-                  </th>
-                  <th className="p-3 font-semibold whitespace-nowrap">
-                    ชื่อผู้เช่า
-                  </th>
-                  <th className="p-3 font-semibold whitespace-nowrap">
-                    ค่าน้ำ
-                  </th>
-                  <th className="p-3 font-semibold whitespace-nowrap">ค่าไฟ</th>
-                  <th className="p-3 font-semibold whitespace-nowrap">
-                    ค่าส่วนกลาง
-                  </th>
-                  <th className="p-3 font-semibold whitespace-nowrap">อื่นๆ</th>
-                  <th className="p-3 font-semibold whitespace-nowrap">
-                    ค่าเช่า
-                  </th>
-                  <th className="p-3 font-semibold whitespace-nowrap">
-                    ส่วนลด
-                  </th>
-                  <th className="p-3 font-semibold whitespace-nowrap bg-blue-200">
-                    รวม
-                  </th>
-                  <th className="p-3 font-semibold whitespace-nowrap">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {bills.map((b: any, i: number) => (
-                  <tr
-                    key={b.id}
-                    className={
-                      "border-t border-blue-100 hover:bg-blue-50 transition-colors " +
-                      (i % 2 === 0 ? "bg-white" : "bg-blue-25")
-                    }
-                  >
-                    <td className="p-3 whitespace-nowrap">
-                      {b.billDate?.slice(0, 10)}
-                    </td>
-                    <td className="p-3 whitespace-nowrap font-medium">
-                      {b.tenant?.name || "ไม่ระบุ"}
-                    </td>
-                    <td className="p-3 text-right">
-                      {b.water?.toLocaleString()}
-                    </td>
-                    <td className="p-3 text-right">
-                      {b.electric?.toLocaleString()}
-                    </td>
-                    <td className="p-3 text-right">
-                      {b.common?.toLocaleString()}
-                    </td>
-                    <td className="p-3 text-right">
-                      {(b.other || 0).toLocaleString()}
-                    </td>
-                    <td className="p-3 text-right">
-                      {b.rent?.toLocaleString()}
-                    </td>
-                    <td className="p-3 text-right text-green-600 font-medium">
-                      {(b.discount || 0).toLocaleString()}
-                    </td>
-                    <td className="p-3 text-right font-bold text-blue-700 bg-blue-50">
-                      {b.total?.toLocaleString()}
-                    </td>
-                    <td className="p-3 whitespace-nowrap">
-                      <div className="flex gap-2">
-                        <button
-                          className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200"
-                          onClick={() =>
-                            window.open(`/bill-receipt/${b.id}`, "_blank")
-                          }
-                        >
-                          📄 บิล
-                        </button>
-                        <button
-                          className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs hover:bg-yellow-200"
-                          onClick={() => handleEditBill(b)}
-                        >
-                          ✏️ แก้ไข
-                        </button>
-                        <button
-                          className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200"
-                          onClick={() => {
-                            setBillToDelete(b);
-                            setConfirmModalOpen(true);
-                          }}
-                        >
-                          🗑️ ลบ
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <BillTable
+            bills={bills}
+            onEdit={handleEditBill}
+            onDelete={handleDeleteClick}
+          />
         )}
       </div>
     </div>

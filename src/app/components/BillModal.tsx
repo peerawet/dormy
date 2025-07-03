@@ -49,6 +49,10 @@ export default function BillModal({
     total: "",
   });
 
+  // เพิ่ม state สำหรับโหมดการคำนวณ
+  const [waterMode, setWaterMode] = useState<"auto" | "manual">("auto");
+  const [electricMode, setElectricMode] = useState<"auto" | "manual">("auto");
+
   const [fieldErrors, setFieldErrors] = useState<FieldValidation>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
@@ -60,6 +64,22 @@ export default function BillModal({
       rent: [
         (value: string) => validators.required(value, "ค่าเช่า"),
         (value: string) => validators.positiveNumber(value, "ค่าเช่า"),
+      ],
+      water: [
+        (value: string) => {
+          if (waterMode === "manual") {
+            return validators.nonNegativeNumber(value, "ค่าน้ำ");
+          }
+          return { isValid: true, message: "" };
+        },
+      ],
+      electric: [
+        (value: string) => {
+          if (electricMode === "manual") {
+            return validators.nonNegativeNumber(value, "ค่าไฟ");
+          }
+          return { isValid: true, message: "" };
+        },
       ],
       meterWaterStart: [
         (value: string) => {
@@ -122,7 +142,7 @@ export default function BillModal({
         },
       ],
     }),
-    [form.meterWaterStart, form.meterElectricStart]
+    [form.meterWaterStart, form.meterElectricStart, waterMode, electricMode]
   );
 
   // Real-time validation
@@ -163,6 +183,36 @@ export default function BillModal({
           discount: editBill.discount ? String(editBill.discount) : "",
           total: editBill.total ? String(editBill.total) : "",
         });
+
+        // ตรวจสอบว่าค่าน้ำ ค่าไฟถูกใส่แบบ manual หรือไม่
+        const hasWaterMeter =
+          editBill.meterWaterStart && editBill.meterWaterEnd;
+        const hasElectricMeter =
+          editBill.meterElectricStart && editBill.meterElectricEnd;
+
+        if (hasWaterMeter && room?.waterRate) {
+          const units = editBill.meterWaterEnd - editBill.meterWaterStart;
+          const calculatedWater = units * room.waterRate;
+          setWaterMode(
+            Math.abs(editBill.water - calculatedWater) > 0.01
+              ? "manual"
+              : "auto"
+          );
+        } else {
+          setWaterMode(editBill.water ? "manual" : "auto");
+        }
+
+        if (hasElectricMeter && room?.electricRate) {
+          const units = editBill.meterElectricEnd - editBill.meterElectricStart;
+          const calculatedElectric = units * room.electricRate;
+          setElectricMode(
+            Math.abs(editBill.electric - calculatedElectric) > 0.01
+              ? "manual"
+              : "auto"
+          );
+        } else {
+          setElectricMode(editBill.electric ? "manual" : "auto");
+        }
       } else {
         // หา bill ล่าสุดเพื่อ prefill เลขมิเตอร์
         const latestBill = bills?.length > 0 ? bills[0] : null;
@@ -190,6 +240,10 @@ export default function BillModal({
           discount: "",
           total: "",
         });
+
+        // Reset modes for new bill
+        setWaterMode("auto");
+        setElectricMode("auto");
       }
       setFieldErrors({});
       setHasSubmitted(false);
@@ -198,24 +252,33 @@ export default function BillModal({
 
   useEffect(() => {
     let water = form.water;
-    if (form.meterWaterStart && form.meterWaterEnd && room?.waterRate) {
-      const units = Number(form.meterWaterEnd) - Number(form.meterWaterStart);
-      if (units >= 0) water = String(units * room.waterRate);
-    } else if (room?.waterFlat) {
-      water = String(room.waterFlat);
-    }
     let electric = form.electric;
-    if (
-      form.meterElectricStart &&
-      form.meterElectricEnd &&
-      room?.electricRate
-    ) {
-      const units =
-        Number(form.meterElectricEnd) - Number(form.meterElectricStart);
-      if (units >= 0) electric = String(units * room.electricRate);
-    } else if (room?.electricFlat) {
-      electric = String(room.electricFlat);
+
+    // คำนวณค่าน้ำ
+    if (waterMode === "auto") {
+      if (form.meterWaterStart && form.meterWaterEnd && room?.waterRate) {
+        const units = Number(form.meterWaterEnd) - Number(form.meterWaterStart);
+        if (units >= 0) water = String(units * room.waterRate);
+      } else if (room?.waterFlat) {
+        water = String(room.waterFlat);
+      }
     }
+
+    // คำนวณค่าไฟ
+    if (electricMode === "auto") {
+      if (
+        form.meterElectricStart &&
+        form.meterElectricEnd &&
+        room?.electricRate
+      ) {
+        const units =
+          Number(form.meterElectricEnd) - Number(form.meterElectricStart);
+        if (units >= 0) electric = String(units * room.electricRate);
+      } else if (room?.electricFlat) {
+        electric = String(room.electricFlat);
+      }
+    }
+
     const total =
       (Number(water) || 0) +
       (Number(electric) || 0) +
@@ -223,6 +286,7 @@ export default function BillModal({
       (Number(form.other) || 0) +
       (Number(form.rent) || 0) -
       (Number(form.discount) || 0);
+
     setForm((f) => ({
       ...f,
       water,
@@ -239,6 +303,9 @@ export default function BillModal({
     form.rent,
     form.discount,
     room,
+    waterMode,
+    electricMode,
+    // ไม่รวม form.water และ form.electric เพื่อไม่ให้ reset ค่าที่ใส่แบบ manual
   ]);
 
   // Calculate units for display
@@ -462,23 +529,69 @@ export default function BillModal({
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {/* ปุ่มสลับโหมดค่าน้ำ */}
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-semibold text-gray-700">
                   <span className="flex items-center gap-2">
                     <span className="text-lg">💧</span>
-                    ค่าน้ำ (คำนวณอัตโนมัติ)
+                    ค่าน้ำ
                   </span>
                 </label>
-                <input
-                  type="number"
-                  className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 font-semibold"
-                  value={form.water}
-                  readOnly
-                />
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <button
+                    type="button"
+                    className={`px-3 py-1 text-xs font-medium rounded transition-all ${
+                      waterMode === "auto"
+                        ? "bg-blue-500 text-white shadow-sm"
+                        : "text-gray-600 hover:text-gray-800"
+                    }`}
+                    onClick={() => setWaterMode("auto")}
+                    disabled={loading}
+                  >
+                    🤖 อัตโนมัติ
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1 text-xs font-medium rounded transition-all ${
+                      waterMode === "manual"
+                        ? "bg-blue-500 text-white shadow-sm"
+                        : "text-gray-600 hover:text-gray-800"
+                    }`}
+                    onClick={() => setWaterMode("manual")}
+                    disabled={loading}
+                  >
+                    ✏️ ใส่เอง
+                  </button>
+                </div>
               </div>
 
+              {waterMode === "manual" ? (
+                <ValidatedInput
+                  label=""
+                  value={form.water}
+                  onChange={(value) => setForm((f) => ({ ...f, water: value }))}
+                  validation={fieldErrors.water}
+                  type="number"
+                  placeholder="0"
+                  icon="💧"
+                  suffix="บาท"
+                  disabled={loading}
+                  min={0}
+                />
+              ) : (
+                <div>
+                  <input
+                    type="number"
+                    className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 font-semibold"
+                    value={form.water}
+                    readOnly
+                  />
+                </div>
+              )}
+
               {/* แสดงจำนวนหน่วยน้ำ */}
-              {form.meterWaterStart &&
+              {waterMode === "auto" &&
+                form.meterWaterStart &&
                 form.meterWaterEnd &&
                 waterUnits >= 0 && (
                   <div className="text-center py-2">
@@ -528,22 +641,71 @@ export default function BillModal({
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {/* ปุ่มสลับโหมดค่าไฟ */}
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-semibold text-gray-700">
                   <span className="flex items-center gap-2">
                     <span className="text-lg">⚡</span>
-                    ค่าไฟ (คำนวณอัตโนมัติ)
+                    ค่าไฟ
                   </span>
                 </label>
-                <input
-                  type="number"
-                  className="w-full px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-700 font-semibold"
-                  value={form.electric}
-                  readOnly
-                />
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <button
+                    type="button"
+                    className={`px-3 py-1 text-xs font-medium rounded transition-all ${
+                      electricMode === "auto"
+                        ? "bg-yellow-500 text-white shadow-sm"
+                        : "text-gray-600 hover:text-gray-800"
+                    }`}
+                    onClick={() => setElectricMode("auto")}
+                    disabled={loading}
+                  >
+                    🤖 อัตโนมัติ
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1 text-xs font-medium rounded transition-all ${
+                      electricMode === "manual"
+                        ? "bg-yellow-500 text-white shadow-sm"
+                        : "text-gray-600 hover:text-gray-800"
+                    }`}
+                    onClick={() => setElectricMode("manual")}
+                    disabled={loading}
+                  >
+                    ✏️ ใส่เอง
+                  </button>
+                </div>
               </div>
+
+              {electricMode === "manual" ? (
+                <ValidatedInput
+                  label=""
+                  value={form.electric}
+                  onChange={(value) =>
+                    setForm((f) => ({ ...f, electric: value }))
+                  }
+                  validation={fieldErrors.electric}
+                  type="number"
+                  placeholder="0"
+                  icon="⚡"
+                  suffix="บาท"
+                  disabled={loading}
+                  min={0}
+                />
+              ) : (
+                <div>
+                  <input
+                    type="number"
+                    className="w-full px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-700 font-semibold"
+                    value={form.electric}
+                    readOnly
+                  />
+                </div>
+              )}
+
               {/* แสดงจำนวนหน่วยไฟ */}
-              {form.meterElectricStart &&
+              {electricMode === "auto" &&
+                form.meterElectricStart &&
                 form.meterElectricEnd &&
                 electricUnits >= 0 && (
                   <div className="text-center py-2">
