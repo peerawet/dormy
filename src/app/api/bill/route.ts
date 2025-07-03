@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import type { Prisma } from "@prisma/client";
 
 const JWT_SECRET = process.env.JWT_SECRET || "changeme";
 
@@ -14,6 +15,24 @@ function getUserIdFromAuth(req: Request) {
   } catch {
     return null;
   }
+}
+
+interface BillPayload {
+  id?: number;
+  roomId: number;
+  tenantId?: number;
+  billDate?: string;
+  water?: number;
+  electric?: number;
+  common?: number;
+  other?: number;
+  rent?: number;
+  discount?: number;
+  total?: number;
+  meterWaterStart?: number | null;
+  meterWaterEnd?: number | null;
+  meterElectricStart?: number | null;
+  meterElectricEnd?: number | null;
 }
 
 export async function GET(req: Request) {
@@ -63,7 +82,7 @@ export async function POST(req: Request) {
       { success: false, message: "Unauthorized" },
       { status: 401 }
     );
-  const body = await req.json();
+  const body: BillPayload = await req.json();
   const { roomId, billDate, tenantId } = body;
   if (!roomId || !tenantId)
     return NextResponse.json(
@@ -141,7 +160,7 @@ export async function PUT(req: Request) {
       { success: false, message: "Unauthorized" },
       { status: 401 }
     );
-  const body = await req.json();
+  const body: BillPayload = await req.json();
   const { id, roomId, tenantId } = body;
   if (!id || !roomId)
     return NextResponse.json(
@@ -178,7 +197,7 @@ export async function PUT(req: Request) {
       );
   }
 
-  const updateData: any = {
+  const updateData: Prisma.BillUpdateInput = {
     billDate: body.billDate ? new Date(body.billDate) : undefined,
     water: Number(body.water) || 0,
     electric: Number(body.electric) || 0,
@@ -198,7 +217,7 @@ export async function PUT(req: Request) {
   };
 
   if (tenantId) {
-    updateData.tenantId = Number(tenantId);
+    updateData.tenant = { connect: { id: Number(tenantId) } };
   }
 
   const bill = await prisma.bill.update({
