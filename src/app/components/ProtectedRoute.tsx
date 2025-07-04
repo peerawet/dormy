@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { RootState } from "@/store";
+import { useSession } from "next-auth/react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,16 +15,17 @@ export default function ProtectedRoute({
   fallbackPath = "/login",
 }: ProtectedRouteProps) {
   const { token } = useSelector((state: RootState) => state.auth);
+  const { status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (!token) {
+    if (!token && status !== "authenticated") {
       router.replace(fallbackPath);
     }
-  }, [token, router, fallbackPath]);
+  }, [token, router, fallbackPath, status]);
 
   // Show loading while checking authentication
-  if (!token) {
+  if (!token && status !== "authenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="text-center">
