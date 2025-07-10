@@ -1,8 +1,14 @@
-# 🏠 Dormy - ระบบจัดการหอพัก
+# 🏠 Dormy - ระบบจัดการหอพัก (SAAS Design)
 
 **ช่วยให้การจัดการหอพักเป็นเรื่องง่าย สะดวก และปลอดภัย**
 
 Dormy เป็นระบบจัดการหอพักที่ครบครันสำหรับเจ้าของหอพัก ช่วยจัดการข้อมูลผู้เช่า ห้องพัก สัญญาเช่า และการเงินได้อย่างมีประสิทธิภาพ
+
+## 🌐 Live Demo
+
+**เว็บไซต์**: [https://dormy.forifi.xyz/](https://dormy.forifi.xyz/)
+
+_Deployed on AWS ECS with RDS and Load Balancer for high availability and scalability_
 
 ## ✨ คุณสมบัติหลัก
 
@@ -205,6 +211,14 @@ dormy/
 
 ## 🔧 การกำหนดค่าเพิ่มเติม
 
+### Production Deployment (AWS)
+
+โปรเจคนี้ถูก Deploy บน AWS Infrastructure:
+
+- **AWS ECS (Elastic Container Service)** - Container orchestration
+- **AWS RDS (PostgreSQL)** - Managed database service
+- **Application Load Balancer** - High availability และ SSL termination
+
 ### Docker Support
 
 โปรเจคมี `Dockerfile` สำหรับการ Deploy:
@@ -300,6 +314,12 @@ datasource db {
 **Making dormitory management easy, convenient, and secure**
 
 Dormy is a comprehensive dormitory management system for property owners, helping manage tenant information, rooms, rental contracts, and finances efficiently.
+
+## 🌐 Live Demo
+
+**Website**: [https://dormy.forifi.xyz/](https://dormy.forifi.xyz/)
+
+_Deployed on AWS ECS with RDS and Load Balancer for high availability and scalability_
 
 ## ✨ Key Features
 
@@ -501,6 +521,15 @@ dormy/
 - Click "Bills" tab and create monthly bills
 
 ## 🔧 Additional Configuration
+
+### Production Deployment (AWS)
+
+This project is deployed on AWS Infrastructure:
+
+- **AWS ECS (Elastic Container Service)** - Container orchestration
+- **AWS RDS (PostgreSQL)** - Managed database service
+- **Application Load Balancer** - High availability and SSL termination
+
 
 ### Docker Support
 
