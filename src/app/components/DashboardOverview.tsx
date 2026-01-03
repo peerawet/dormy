@@ -9,6 +9,7 @@ import {
   FileText,
   Droplet,
   Zap,
+  Plus,
 } from "lucide-react";
 
 interface Growth {
@@ -39,6 +40,9 @@ interface DashboardOverviewProps {
   waterExpense?: CategoryExpense;
   electricExpense?: CategoryExpense;
   formatCurrency: (amount: number) => string;
+  onAddExpense?: () => void;
+  onAddWaterExpense?: () => void;
+  onAddElectricExpense?: () => void;
 }
 
 export default function DashboardOverview({
@@ -49,6 +53,9 @@ export default function DashboardOverview({
   waterExpense,
   electricExpense,
   formatCurrency,
+  onAddExpense,
+  onAddWaterExpense,
+  onAddElectricExpense,
 }: DashboardOverviewProps) {
   const netProfit = stats.monthlyRevenue - totalExpenses;
 
@@ -129,6 +136,15 @@ export default function DashboardOverview({
             {Math.abs(expenseGrowth.percentage).toFixed(1)}% จากเดือนก่อน
           </p>
         )}
+        {onAddExpense && (
+          <button
+            onClick={onAddExpense}
+            className="mt-2 inline-flex items-center gap-1.5 text-[10px] md:text-xs px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-md transition-colors font-medium"
+          >
+            <Plus className="w-3 h-3" />
+            <span>เพิ่มค่าใช้จ่าย</span>
+          </button>
+        )}
       </div>
 
       {/* Water Expense */}
@@ -158,6 +174,15 @@ export default function DashboardOverview({
             {waterExpense.growth.isPositive ? "+" : "-"}
             {Math.abs(waterExpense.growth.percentage).toFixed(1)}% จากเดือนก่อน
           </p>
+        )}
+        {onAddWaterExpense && (
+          <button
+            onClick={onAddWaterExpense}
+            className="mt-2 inline-flex items-center gap-1.5 text-[10px] md:text-xs px-2.5 py-1 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 rounded-md transition-colors font-medium"
+          >
+            <Plus className="w-3 h-3" />
+            <span>เพิ่มค่าน้ำ</span>
+          </button>
         )}
       </div>
 
@@ -191,6 +216,15 @@ export default function DashboardOverview({
             {Math.abs(electricExpense.growth.percentage).toFixed(1)}%
             จากเดือนก่อน
           </p>
+        )}
+        {onAddElectricExpense && (
+          <button
+            onClick={onAddElectricExpense}
+            className="mt-2 inline-flex items-center gap-1.5 text-[10px] md:text-xs px-2.5 py-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 rounded-md transition-colors font-medium"
+          >
+            <Plus className="w-3 h-3" />
+            <span>เพิ่มค่าไฟ</span>
+          </button>
         )}
       </div>
 

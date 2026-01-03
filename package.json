@@ -5,8 +5,17 @@
   "scripts": {
     "dev": "next dev -p 4000",
     "build": "next build",
-    "start": "next start -p 4000 -H 0.0.0.0",
-    "lint": "next lint"
+    "start": "next start -H 0.0.0.0",
+    "lint": "next lint",
+    "db:export": "powershell -ExecutionPolicy Bypass -File ./scripts/export-aws-db.ps1",
+    "db:import": "powershell -ExecutionPolicy Bypass -File ./scripts/import-to-local.ps1",
+    "db:sync": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-aws-to-local-complete.ps1",
+    "db:pull": "npx prisma db pull",
+    "db:push": "npx prisma db push",
+    "db:generate": "npx prisma generate",
+    "db:studio": "npx prisma studio",
+    "db:migrate": "npx prisma migrate dev",
+    "db:migrate:deploy": "npx prisma migrate deploy"
   },
   "dependencies": {
     "@fontsource/playpen-sans": "^5.2.7",

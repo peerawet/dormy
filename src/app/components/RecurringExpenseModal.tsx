@@ -1,22 +1,25 @@
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import ValidatedInput from "./ValidatedInput";
-import { validators, FieldValidation } from "../../utils/validation";
+import { FieldValidation } from "../../utils/validation";
+import { RecurringExpenseFormData } from "@/store/recurringExpenseSlice";
 
-interface ExpenseModalProps {
+interface RecurringExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (formData: ExpenseFormData) => Promise<void>;
-  editExpense?: {
+  onSubmit: (formData: RecurringExpenseFormData) => Promise<void>;
+  editRecurringExpense?: {
     id: number;
     dormitoryId: number;
     roomId?: number;
     type: string;
     description: string;
     amount: number;
-    expenseDate: string;
+    frequency: string;
+    dayOfMonth?: number;
+    isActive: boolean;
   } | null;
-  initialData?: Partial<ExpenseFormData> | null;
+  initialData?: Partial<RecurringExpenseFormData> | null;
   dormitories: {
     id: number;
     name: string;
@@ -28,16 +31,6 @@ interface ExpenseModalProps {
   loading?: boolean;
 }
 
-interface ExpenseFormData {
-  id?: number;
-  dormitoryId: number;
-  roomId?: number;
-  type: string;
-  description: string;
-  amount: number;
-  expenseDate: string;
-}
-
 const expenseTypes = [
   { value: "water", label: "ค่าน้ำ", color: "blue", icon: "💧" },
   { value: "electric", label: "ค่าไฟ", color: "yellow", icon: "⚡" },
@@ -47,7 +40,6 @@ const expenseTypes = [
   { value: "security", label: "รักษาความปลอดภัย", color: "purple", icon: "🛡️" },
   { value: "insurance", label: "ประกันภัย", color: "indigo", icon: "🛡️" },
   { value: "internet", label: "อินเทอร์เน็ต", color: "cyan", icon: "🌐" },
-
   {
     value: "furniture",
     label: "ของใช้เฟอร์นิเจอร์",
@@ -58,22 +50,30 @@ const expenseTypes = [
   { value: "other", label: "อื่นๆ", color: "gray", icon: "📝" },
 ];
 
-export default function ExpenseModal({
+const frequencyOptions = [
+  { value: "monthly", label: "รายเดือน", icon: "📅" },
+  { value: "weekly", label: "รายสัปดาห์", icon: "📆" },
+  { value: "yearly", label: "รายปี", icon: "📆" },
+];
+
+export default function RecurringExpenseModal({
   isOpen,
   onClose,
   onSubmit,
-  editExpense,
+  editRecurringExpense,
   initialData,
   dormitories,
   loading = false,
-}: ExpenseModalProps) {
-  const [formData, setFormData] = useState<ExpenseFormData>({
+}: RecurringExpenseModalProps) {
+  const [formData, setFormData] = useState<RecurringExpenseFormData>({
     dormitoryId: 0,
     roomId: undefined,
     type: "other",
     description: "",
     amount: 0,
-    expenseDate: new Date().toISOString().split("T")[0],
+    frequency: "monthly",
+    dayOfMonth: undefined,
+    isActive: true,
   });
   const [fieldErrors, setFieldErrors] = useState<FieldValidation>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -120,12 +120,27 @@ export default function ExpenseModal({
       errors.amount = { isValid: true, message: "" };
     }
 
-    // Validate expense date
-    if (!formData.expenseDate) {
-      errors.expenseDate = { isValid: false, message: "กรุณาเลือกวันที่" };
+    // Validate frequency
+    if (!formData.frequency) {
+      errors.frequency = { isValid: false, message: "กรุณาเลือกความถี่" };
       isValid = false;
     } else {
-      errors.expenseDate = { isValid: true, message: "" };
+      errors.frequency = { isValid: true, message: "" };
+    }
+
+    // Validate dayOfMonth for monthly frequency
+    if (formData.frequency === "monthly") {
+      if (!formData.dayOfMonth || formData.dayOfMonth < 1 || formData.dayOfMonth > 31) {
+        errors.dayOfMonth = {
+          isValid: false,
+          message: "กรุณาระบุวันที่ (1-31)",
+        };
+        isValid = false;
+      } else {
+        errors.dayOfMonth = { isValid: true, message: "" };
+      }
+    } else {
+      errors.dayOfMonth = { isValid: true, message: "" };
     }
 
     return { isValid, errors };
@@ -138,15 +153,17 @@ export default function ExpenseModal({
   // Initialize form data when modal opens
   useEffect(() => {
     if (isOpen) {
-      if (editExpense) {
+      if (editRecurringExpense) {
         setFormData({
-          id: editExpense.id,
-          dormitoryId: editExpense.dormitoryId,
-          roomId: editExpense.roomId || undefined,
-          type: editExpense.type,
-          description: editExpense.description,
-          amount: editExpense.amount,
-          expenseDate: editExpense.expenseDate.split("T")[0],
+          id: editRecurringExpense.id,
+          dormitoryId: editRecurringExpense.dormitoryId,
+          roomId: editRecurringExpense.roomId || undefined,
+          type: editRecurringExpense.type,
+          description: editRecurringExpense.description,
+          amount: editRecurringExpense.amount,
+          frequency: editRecurringExpense.frequency,
+          dayOfMonth: editRecurringExpense.dayOfMonth || undefined,
+          isActive: editRecurringExpense.isActive,
         });
       } else {
         const defaultData = {
@@ -155,7 +172,9 @@ export default function ExpenseModal({
           type: "other",
           description: "",
           amount: 0,
-          expenseDate: new Date().toISOString().split("T")[0],
+          frequency: "monthly" as const,
+          dayOfMonth: undefined,
+          isActive: true,
         };
         setFormData({
           ...defaultData,
@@ -164,7 +183,7 @@ export default function ExpenseModal({
       }
       setHasSubmitted(false);
     }
-  }, [isOpen, editExpense, initialData, dormitories]);
+  }, [isOpen, editRecurringExpense, initialData, dormitories]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,8 +206,10 @@ export default function ExpenseModal({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <span className="text-3xl">💰</span>
-            {editExpense ? "แก้ไขค่าใช้จ่าย" : "เพิ่มค่าใช้จ่ายใหม่"}
+            <span className="text-3xl">🔄</span>
+            {editRecurringExpense
+              ? "แก้ไขค่าใช้จ่ายประจำ"
+              : "เพิ่มค่าใช้จ่ายประจำ"}
           </h2>
         </div>
 
@@ -318,17 +339,83 @@ export default function ExpenseModal({
               step="0.01"
             />
 
-            {/* Date */}
-            <ValidatedInput
-              label="วันที่"
-              required
-              type="date"
-              value={formData.expenseDate}
-              onChange={(value) =>
-                setFormData({ ...formData, expenseDate: value })
+            {/* Frequency */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                ความถี่ <span className="text-red-500">*</span>
+              </label>
+              <select
+                className={`w-full px-4 py-3 border rounded-xl font-medium transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 ${
+                  hasSubmitted && !fieldErrors.frequency?.isValid
+                    ? "border-red-300 bg-red-50 text-red-900 focus:border-red-500 focus:ring-red-500/20"
+                    : hasSubmitted &&
+                      fieldErrors.frequency?.isValid &&
+                      formData.frequency
+                    ? "border-green-300 bg-green-50 text-green-900 focus:border-green-500 focus:ring-green-500/20"
+                    : "border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-500/20"
+                }`}
+                value={formData.frequency}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    frequency: e.target.value,
+                    dayOfMonth:
+                      e.target.value === "monthly"
+                        ? formData.dayOfMonth || 1
+                        : undefined,
+                  })
+                }
+              >
+                {frequencyOptions.map((freq) => (
+                  <option key={freq.value} value={freq.value}>
+                    {freq.icon} {freq.label}
+                  </option>
+                ))}
+              </select>
+              {hasSubmitted && !fieldErrors.frequency?.isValid && (
+                <p className="text-red-500 text-sm mt-1">
+                  {fieldErrors.frequency?.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Day of Month (only for monthly) */}
+          {formData.frequency === "monthly" && (
+            <div>
+              <ValidatedInput
+                label="วันที่ของเดือน"
+                required
+                type="number"
+                value={formData.dayOfMonth?.toString() || ""}
+                onChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    dayOfMonth: Number(value) || undefined,
+                  })
+                }
+                validation={hasSubmitted ? fieldErrors.dayOfMonth : undefined}
+                placeholder="1-31"
+                min={1}
+                max={31}
+              />
+            </div>
+          )}
+
+          {/* Is Active */}
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isActive"
+              checked={formData.isActive}
+              onChange={(e) =>
+                setFormData({ ...formData, isActive: e.target.checked })
               }
-              validation={hasSubmitted ? fieldErrors.expenseDate : undefined}
+              className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
+            <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
+              เปิดใช้งาน
+            </label>
           </div>
 
           <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
@@ -342,7 +429,7 @@ export default function ExpenseModal({
             <button
               type="submit"
               disabled={loading || (hasSubmitted && !isFormValid)}
-              className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {loading ? (
                 <>
@@ -352,7 +439,7 @@ export default function ExpenseModal({
               ) : (
                 <>
                   <span className="text-lg">💾</span>
-                  {editExpense ? "อัปเดต" : "บันทึก"}
+                  {editRecurringExpense ? "อัปเดต" : "บันทึก"}
                 </>
               )}
             </button>
@@ -363,3 +450,4 @@ export default function ExpenseModal({
     document.body
   );
 }
+

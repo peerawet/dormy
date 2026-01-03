@@ -34,12 +34,12 @@ COPY --from=builder /app/.env ./.env
 
 # Environment variables will be provided at runtime
 ENV NODE_ENV=production
-ENV PORT=4000
+ENV PORT=5555
 
-EXPOSE 4000
+EXPOSE 5555
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:4000/api/health || exit 1
+  CMD curl -f http://localhost:5555/api/health || exit 1
 
 CMD ["npm", "start"]

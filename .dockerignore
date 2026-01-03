@@ -6,3 +6,4 @@ docker-compose.yml
 .gitignore
 README.md
 npm-debug.log
+.scripts

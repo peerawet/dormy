@@ -6,6 +6,7 @@ import billReducer from "./billSlice";
 import rentalContractReducer from "./rentalContractSlice";
 import tenantReducer from "./tenantSlice";
 import expenseReducer from "./expenseSlice";
+import recurringExpenseReducer from "./recurringExpenseSlice";
 import dashboardReducer from "./dashboardSlice";
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
@@ -33,6 +34,7 @@ const rootReducer = combineReducers({
   rentalContract: rentalContractReducer,
   tenant: tenantReducer,
   expense: expenseReducer,
+  recurringExpense: recurringExpenseReducer,
   dashboard: dashboardReducer,
 });
 

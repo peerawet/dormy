@@ -13,6 +13,7 @@ interface RecentExpensesCardProps {
   formatCurrency: (amount: number) => string;
   title: string;
   subtitle: string;
+  onDelete?: (expenseId: string) => void;
 }
 
 export default function RecentExpensesCard({
@@ -20,6 +21,7 @@ export default function RecentExpensesCard({
   formatCurrency,
   title,
   subtitle,
+  onDelete,
 }: RecentExpensesCardProps) {
   const getExpenseTypeColor = (type: string) => {
     switch (type) {
@@ -92,10 +94,22 @@ export default function RecentExpensesCard({
                   </div>
                 </div>
               </div>
-              <div className="text-right">
-                <span className="text-lg font-bold text-red-600">
-                  {formatCurrency(expense.amount)}
-                </span>
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <span className="text-lg font-bold text-red-600">
+                    {formatCurrency(expense.amount)}
+                  </span>
+                </div>
+                {onDelete && (
+                  <button
+                    onClick={() => onDelete(expense.id)}
+                    className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200 transition-colors font-medium flex items-center gap-1"
+                    title="ลบค่าใช้จ่าย"
+                  >
+                    <span>🗑️</span>
+                    <span className="hidden sm:inline">ลบ</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

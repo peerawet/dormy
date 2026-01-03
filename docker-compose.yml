@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: dormy-postgres-local
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dormy_local
+    ports:
+      - "5432:5432"
+    volumes:
+      # Named volume - ข้อมูลจะ persist แม้ container หยุดหรือถูกลบ
+      # ข้อมูลจะถูกเก็บใน Docker's volume storage
+      - postgres_data:/var/lib/postgresql/data
+      
+      # หรือใช้ bind mount เพื่อเก็บข้อมูลในโฟลเดอร์โปรเจค (เลือกใช้อย่างใดอย่างหนึ่ง)
+      # - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - dormy-network
+
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dormy-nextjs
+    ports:
+      - "5555:5555"
+    environment:
+      - NODE_ENV=production
+      - PORT=5555
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/dormy_local
+      - NEXTAUTH_URL=http://localhost:5555
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-your-secret-key-change-this}
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-this}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - dormy-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  # Named volume - Docker จะจัดการ storage location ให้อัตโนมัติ
+  # ข้อมูลจะ persist แม้ container ถูกลบ
+  postgres_data:
+    # ข้อมูลจะถูกเก็บที่:
+    # Windows: \\wsl$\docker-desktop-data\data\docker\volumes\<volume_name>\_data
+    # หรือ C:\ProgramData\docker\volumes\<volume_name>\_data
+
+networks:
+  dormy-network:
+    driver: bridge
+

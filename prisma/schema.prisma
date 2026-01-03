@@ -32,6 +32,7 @@ model Dormitory {
   owner     User     @relation(fields: [ownerId], references: [id])
   rooms     Room[]
   expenses  Expense[]
+  recurringExpenses RecurringExpense[]
 }
 
 model Room {
@@ -52,6 +53,7 @@ model Room {
   tenantRooms  TenantRoom[]
   rentalContracts RentalContract[]
   expenses     Expense[]
+  recurringExpenses RecurringExpense[]
 }
 
 model Tenant {
@@ -123,6 +125,23 @@ model Expense {
   description  String    // รายละเอียดค่าใช้จ่าย
   amount       Float     // จำนวนเงิน
   expenseDate  DateTime  // วันที่เกิดค่าใช้จ่าย
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
+  dormitory    Dormitory @relation(fields: [dormitoryId], references: [id])
+  room         Room?     @relation(fields: [roomId], references: [id])
+  
+}
+
+model RecurringExpense {
+  id           Int       @id @default(autoincrement())
+  dormitoryId  Int
+  roomId       Int?      // Optional - ค่าใช้จ่ายประจำเฉพาะห้อง (ถ้าไม่ระบุ = ค่าใช้จ่ายประจำทั้งหอพัก)
+  type         String    // ประเภทค่าใช้จ่าย เช่น "water", "electric", "maintenance", "cleaning", "repair", "other"
+  description  String    // รายละเอียดค่าใช้จ่าย
+  amount       Float     // จำนวนเงินต่อครั้ง
+  frequency    String    // ความถี่: "monthly", "weekly", "yearly"
+  dayOfMonth   Int?      // วันที่ของเดือนที่ต้องจ่าย (1-31) สำหรับ monthly
+  isActive     Boolean   @default(true) // เปิด/ปิดการใช้งาน
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @default(now()) @updatedAt
   dormitory    Dormitory @relation(fields: [dormitoryId], references: [id])
