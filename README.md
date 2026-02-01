@@ -108,23 +108,68 @@ npm install
 
 ### 3. ตั้งค่า Environment Variables
 
-สร้างไฟล์ `.env.local` และกำหนดค่าต่อไปนี้:
+#### สำหรับ Development (Local)
+
+สร้างไฟล์ `.env.local` (ใช้ database local):
+
+```bash
+# คัดลอกไฟล์ตัวอย่าง
+cp env.local.example .env.local
+```
+
+แก้ไข `.env.local`:
 
 ```env
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/dormy"
+# Database - ใช้ Local PostgreSQL
+# ต้องตรงกับ docker-compose.yml (POSTGRES_USER และ POSTGRES_PASSWORD)
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/dormy_local"
 
 # NextAuth
 NEXTAUTH_URL="http://localhost:4000"
-NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_SECRET="your-development-secret-key"
 
-# LINE OA
+# JWT Secret
+JWT_SECRET="your-jwt-secret-for-development"
+
+# LINE OA (Optional)
 LINE_CHANNEL_ID="your-line-channel-id"
 LINE_CHANNEL_SECRET="your-line-channel-secret"
 LINE_ACCESS_TOKEN="your-line-access-token"
 ```
 
+**หมายเหตุ:** `.env.local` จะใช้สำหรับ development เท่านั้น และจะถูก ignore โดย git
+
+#### สำหรับ Production
+
+ตั้งค่า environment variables ใน deployment platform ของคุณ (Vercel, AWS, etc.) ดูตัวอย่างใน `env.production.example`
+
 ### 4. เตรียม Database
+
+#### สำหรับ Development (Local Database)
+
+1. **ติดตั้ง PostgreSQL Local** (ถ้ายังไม่มี):
+   - Windows: ดาวน์โหลดจาก [PostgreSQL Downloads](https://www.postgresql.org/download/windows/)
+   - หรือใช้ Docker: `docker run --name postgres-local -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres`
+
+2. **สร้าง Database**:
+   ```sql
+   -- เชื่อมต่อ PostgreSQL แล้วรันคำสั่งนี้
+   CREATE DATABASE dormy_local;
+   ```
+
+3. **Run Migrations**:
+   ```bash
+   # Generate Prisma Client
+   npx prisma generate
+
+   # Run Database Migrations (development)
+   npx prisma migrate dev
+
+   # หรือใช้ db:push สำหรับ development (ไม่สร้าง migration file)
+   npx prisma db push
+   ```
+
+#### สำหรับ Production
 
 ```bash
 # Generate Prisma Client
@@ -132,9 +177,6 @@ npx prisma generate
 
 # Run Database Migrations
 npx prisma migrate deploy
-
-# (Optional) Seed Database
-npx prisma db seed
 ```
 
 ### 5. รันแอปพลิเคชัน
@@ -419,23 +461,68 @@ npm install
 
 ### 3. Setup Environment Variables
 
-Create a `.env.local` file and configure the following:
+#### For Development (Local)
+
+Create a `.env.local` file (uses local database):
+
+```bash
+# Copy example file
+cp env.local.example .env.local
+```
+
+Edit `.env.local`:
 
 ```env
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/dormy"
+# Database - Use Local PostgreSQL
+# Must match docker-compose.yml (POSTGRES_USER and POSTGRES_PASSWORD)
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/dormy_local"
 
 # NextAuth
 NEXTAUTH_URL="http://localhost:4000"
-NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_SECRET="your-development-secret-key"
 
-# LINE OA
+# JWT Secret
+JWT_SECRET="your-jwt-secret-for-development"
+
+# LINE OA (Optional)
 LINE_CHANNEL_ID="your-line-channel-id"
 LINE_CHANNEL_SECRET="your-line-channel-secret"
 LINE_ACCESS_TOKEN="your-line-access-token"
 ```
 
+**Note:** `.env.local` is for development only and is git-ignored
+
+#### For Production
+
+Set environment variables in your deployment platform (Vercel, AWS, etc.). See `env.production.example` for reference.
+
 ### 4. Prepare Database
+
+#### For Development (Local Database)
+
+1. **Install Local PostgreSQL** (if not already installed):
+   - Windows: Download from [PostgreSQL Downloads](https://www.postgresql.org/download/windows/)
+   - Or use Docker: `docker run --name postgres-local -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres`
+
+2. **Create Database**:
+   ```sql
+   -- Connect to PostgreSQL and run:
+   CREATE DATABASE dormy_local;
+   ```
+
+3. **Run Migrations**:
+   ```bash
+   # Generate Prisma Client
+   npx prisma generate
+
+   # Run Database Migrations (development)
+   npx prisma migrate dev
+
+   # Or use db:push for development (doesn't create migration file)
+   npx prisma db push
+   ```
+
+#### For Production
 
 ```bash
 # Generate Prisma Client
@@ -443,9 +530,6 @@ npx prisma generate
 
 # Run Database Migrations
 npx prisma migrate deploy
-
-# (Optional) Seed Database
-npx prisma db seed
 ```
 
 ### 5. Run Application

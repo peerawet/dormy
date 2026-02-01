@@ -50,17 +50,60 @@ LINE_ACCESS_TOKEN="your-line-access-token"
 
 ### ใช้ ngrok สำหรับ Local Development
 
+#### วิธีที่ 1: ใช้ Script (แนะนำ)
+
+```powershell
+# รัน script ที่เตรียมไว้ให้
+.\scripts\start-ngrok.ps1
+```
+
+#### วิธีที่ 2: รัน ngrok โดยตรง
+
 ```bash
-# ติดตั้ง ngrok
+# ติดตั้ง ngrok (ถ้ายังไม่มี)
 # Windows: choco install ngrok
-# หรือดาวน์โหลดจาก https://ngrok.com/
+# หรือดาวน์โหลดจาก https://ngrok.com/download
 
 # รัน ngrok
 ngrok http 4000
-
-# ใช้ URL ที่ได้ เช่น https://xxxx.ngrok.io
-# ใส่ใน LINE Developer Console: https://xxxx.ngrok.io/api/line/webhook
 ```
+
+#### ขั้นตอนการทดสอบ
+
+1. **เริ่ม Development Server:**
+   ```bash
+   npm run dev
+   ```
+
+2. **เริ่ม ngrok (ใน terminal อีกหน้าต่าง):**
+   ```powershell
+   .\scripts\start-ngrok.ps1
+   # หรือ
+   ngrok http 4000
+   ```
+
+3. **Copy ngrok HTTPS URL:**
+   - ดูใน terminal ที่รัน ngrok
+   - จะเห็น URL เช่น: `https://xxxx-xx-xx-xx-xx.ngrok-free.app`
+   - หรือดูที่ http://localhost:4040 (ngrok web interface)
+
+4. **สร้าง Webhook URL:**
+   ```
+   https://xxxx-xx-xx-xx-xx.ngrok-free.app/api/line/webhook
+   ```
+
+5. **ตั้งค่าใน LINE Developer Console:**
+   - ไปที่ [LINE Developers Console](https://developers.line.biz/console/)
+   - เลือก Channel ของคุณ
+   - ไปที่ **Messaging API** → **Webhook settings**
+   - ใส่ Webhook URL ที่สร้างไว้
+   - คลิก **Verify** (ควรเห็น ✅ Success)
+   - เปิดใช้งาน **Use webhook**
+
+6. **ทดสอบ:**
+   - ส่งข้อความไปที่ LINE OA ของคุณ
+   - ดู logs ใน terminal ที่รัน `npm run dev`
+   - ควรเห็น LINE events ที่เข้ามา
 
 ### ทดสอบด้วย curl
 

@@ -16,7 +16,16 @@
     "db:generate": "npx prisma generate",
     "db:studio": "npx prisma studio",
     "db:migrate": "npx prisma migrate dev",
-    "db:migrate:deploy": "npx prisma migrate deploy"
+    "db:migrate:deploy": "npx prisma migrate deploy",
+    "ngrok": "powershell -ExecutionPolicy Bypass -File ./scripts/start-ngrok.ps1",
+    "test:webhook": "powershell -ExecutionPolicy Bypass -File ./scripts/test-line-webhook.ps1",
+    "rich-menu:create": "powershell -ExecutionPolicy Bypass -File ./scripts/create-rich-menu.ps1",
+    "rich-menu:check": "powershell -ExecutionPolicy Bypass -File ./scripts/check-rich-menu.ps1",
+    "rich-menu:deploy": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy-rich-menu.ps1",
+    "rich-menu:deploy-all": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy-all-rich-menus.ps1",
+    "rich-menu:img": "node ./scripts/generate-rich-menu-image.mjs",
+    "rich-menu:img": "node ./scripts/generate-rich-menu-image.mjs",
+    "rich-menu:deploy": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy-rich-menu.ps1"
   },
   "dependencies": {
     "@fontsource/playpen-sans": "^5.2.7",
@@ -33,6 +42,7 @@
     "lucide-react": "^0.525.0",
     "next": "^15.5.11",
     "next-auth": "^4.24.11",
+    "ngrok": "^5.0.0-beta.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-redux": "^9.2.0",
@@ -41,6 +51,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/jsonwebtoken": "^9.0.10",

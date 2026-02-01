@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 
+const JWT_SECRET = process.env.JWT_SECRET || "changeme";
+
 export async function POST(req: NextRequest) {
   try {
     // ตรวจสอบ authorization
@@ -11,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
       userId: number;
     };
 

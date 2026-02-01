@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="843" viewBox="0 0 2500 843">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="ownerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="tenantGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <style>
+      .title{font-family: ui-sans-serif, system-ui, sans-serif; font-size:48px; font-weight:700; fill:#F1F5F9;}
+      .subtitle{font-family: ui-sans-serif, system-ui, sans-serif; font-size:32px; font-weight:400; fill:#94A3B8;}
+      .btn-text{font-family: ui-sans-serif, system-ui, sans-serif; font-size:52px; font-weight:700; fill:#FFFFFF;}
+      .btn-sub{font-family: ui-sans-serif, system-ui, sans-serif; font-size:28px; font-weight:500; fill:rgba(255,255,255,0.8);}
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="2500" height="843" fill="url(#bgGrad)"/>
+  
+  <!-- Top accent -->
+  <rect x="0" y="0" width="2500" height="4" fill="#10B981"/>
+
+  <!-- Header -->
+  <text x="1250" y="120" text-anchor="middle" class="title">ยินดีต้อนรับสู่ Dormy</text>
+  <text x="1250" y="170" text-anchor="middle" class="subtitle">กรุณาเลือกประเภทผู้ใช้งาน</text>
+
+  <!-- Divider line -->
+  <line x1="1250" y1="220" x2="1250" y2="800" stroke="#334155" stroke-width="2"/>
+
+  <!-- Owner Button (Left) -->
+  <g transform="translate(0,0)">
+    <rect x="100" y="250" width="1000" height="500" rx="24" fill="url(#ownerGrad)" opacity="0.15"/>
+    <rect x="100" y="250" width="1000" height="500" rx="24" stroke="url(#ownerGrad)" stroke-width="3" fill="none"/>
+    
+    <!-- Building icon -->
+    <g transform="translate(600,420)" stroke="#10B981" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <rect x="-80" y="-80" width="160" height="160" rx="16"/>
+      <rect x="-50" y="-50" width="40" height="40" rx="6"/>
+      <rect x="10" y="-50" width="40" height="40" rx="6"/>
+      <rect x="-50" y="10" width="40" height="40" rx="6"/>
+      <rect x="10" y="10" width="40" height="40" rx="6"/>
+    </g>
+    
+    <text x="600" y="600" text-anchor="middle" class="btn-text" fill="#10B981">เจ้าของหอพัก</text>
+    <text x="600" y="650" text-anchor="middle" class="btn-sub" fill="#64748B">จัดการหอพัก บิล ผู้เช่า</text>
+  </g>
+
+  <!-- Tenant Button (Right) -->
+  <g transform="translate(1250,0)">
+    <rect x="150" y="250" width="1000" height="500" rx="24" fill="url(#tenantGrad)" opacity="0.15"/>
+    <rect x="150" y="250" width="1000" height="500" rx="24" stroke="url(#tenantGrad)" stroke-width="3" fill="none"/>
+    
+    <!-- User icon -->
+    <g transform="translate(650,420)" stroke="#3B82F6" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <circle cx="0" cy="-40" r="50"/>
+      <path d="M-80,80 Q-80,20 0,20 Q80,20 80,80"/>
+    </g>
+    
+    <text x="650" y="600" text-anchor="middle" class="btn-text" fill="#3B82F6">ผู้เช่า</text>
+    <text x="650" y="650" text-anchor="middle" class="btn-sub" fill="#64748B">ดูบิล ชำระเงิน แจ้งซ่อม</text>
+  </g>
+</svg>
+
+

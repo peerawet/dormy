@@ -22,8 +22,9 @@ export async function replyMessage(
   }>
 ) {
   if (!LINE_ACCESS_TOKEN) {
-    console.error("LINE_ACCESS_TOKEN is not set");
-    return;
+    const errorMsg = "LINE_ACCESS_TOKEN is not set in environment variables. Please add it to .env.local";
+    console.error("❌", errorMsg);
+    throw new Error(errorMsg);
   }
 
   try {
@@ -40,14 +41,28 @@ export async function replyMessage(
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error("LINE API error:", error);
-      throw new Error(`LINE API error: ${response.status}`);
+      const errorText = await response.text();
+      let errorMessage = `LINE API error: ${response.status}`;
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorMessage;
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+
+      // ให้ error message ที่ชัดเจนขึ้น
+      if (response.status === 401) {
+        errorMessage = "LINE_ACCESS_TOKEN is invalid or expired. Please check your .env.local file and get a new token from LINE Developer Console.";
+      }
+
+      console.error("❌ LINE API error:", errorMessage);
+      throw new Error(errorMessage);
     }
 
     return await response.json();
   } catch (error) {
-    console.error("Failed to send LINE message:", error);
+    console.error("❌ Failed to send LINE message:", error);
     throw error;
   }
 }

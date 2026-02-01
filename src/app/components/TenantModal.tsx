@@ -13,6 +13,7 @@ interface TenantModalProps {
     phone: string;
     idCard?: string;
     address: string;
+    linkCode?: string;
     rooms: {
       room: {
         id: number;
@@ -29,6 +30,7 @@ interface TenantModalProps {
     };
   }[];
   loading?: boolean;
+  onRegenerateLinkCode?: (tenantId: number) => Promise<string | null>;
 }
 
 interface TenantFormData {
@@ -48,6 +50,7 @@ export default function TenantModal({
   editTenant,
   rooms,
   loading = false,
+  onRegenerateLinkCode,
 }: TenantModalProps) {
   const [formData, setFormData] = useState<TenantFormData>({
     name: "",
@@ -59,6 +62,9 @@ export default function TenantModal({
   });
   const [fieldErrors, setFieldErrors] = useState<FieldValidation>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [linkCode, setLinkCode] = useState<string>("");
+  const [copied, setCopied] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   // Real-time validation
   const { isValid: isFormValid, errors } = useMemo(() => {
@@ -123,6 +129,7 @@ export default function TenantModal({
           password: "",
           roomIds: editTenant.rooms?.map((tr: any) => tr.room.id) || [],
         });
+        setLinkCode(editTenant.linkCode || "");
       } else {
         setFormData({
           name: "",
@@ -132,10 +139,33 @@ export default function TenantModal({
           password: "",
           roomIds: [],
         });
+        setLinkCode("");
       }
       setHasSubmitted(false);
+      setCopied(false);
     }
   }, [isOpen, editTenant]);
+
+  const handleCopyLinkCode = async () => {
+    if (linkCode) {
+      await navigator.clipboard.writeText(linkCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleRegenerateLinkCode = async () => {
+    if (!editTenant || !onRegenerateLinkCode) return;
+    if (!confirm("คุณต้องการสร้างรหัสเชื่อมต่อใหม่หรือไม่?\n\nรหัสเดิมจะใช้งานไม่ได้อีกต่อไป")) {
+      return;
+    }
+    setRegenerating(true);
+    const newCode = await onRegenerateLinkCode(editTenant.id);
+    if (newCode) {
+      setLinkCode(newCode);
+    }
+    setRegenerating(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,6 +260,61 @@ export default function TenantModal({
             placeholder="กรอกที่อยู่"
             type="textarea"
           />
+
+          {/* Link Code (only for edit mode) */}
+          {editTenant && (
+            <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">🔗</span>
+                <h3 className="font-semibold text-green-900">รหัสเชื่อมต่อ LINE</h3>
+              </div>
+              <p className="text-green-700 text-sm mb-3">
+                ใช้รหัสนี้ส่งให้ผู้เช่าเพื่อเชื่อมต่อ LINE กับระบบ
+              </p>
+              {linkCode ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-white px-4 py-3 rounded-lg border border-green-300 font-mono text-sm text-gray-800 truncate">
+                    {linkCode}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyLinkCode}
+                    className={`px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                      copied
+                        ? "bg-green-600 text-white"
+                        : "bg-green-100 text-green-700 hover:bg-green-200"
+                    }`}
+                  >
+                    {copied ? "✓ คัดลอกแล้ว" : "📋 คัดลอก"}
+                  </button>
+                  {onRegenerateLinkCode && (
+                    <button
+                      type="button"
+                      onClick={handleRegenerateLinkCode}
+                      disabled={regenerating}
+                      className="px-4 py-3 bg-orange-100 text-orange-700 rounded-lg font-medium hover:bg-orange-200 transition-colors disabled:opacity-50"
+                    >
+                      {regenerating ? "⏳" : "🔄"} สร้างใหม่
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-2">
+                  <p className="text-green-700 text-sm mb-3">ยังไม่มีรหัสเชื่อมต่อ</p>
+                  {onRegenerateLinkCode && (
+                    <button
+                      type="button"
+                      onClick={handleRegenerateLinkCode}
+                      disabled={regenerating}
+                      className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                    >
+                      {regenerating ? "⏳ กำลังสร้าง..." : "✨ สร้างรหัสเชื่อมต่อ"}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Rooms Selection */}
           <div>

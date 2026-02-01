@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1686" viewBox="0 0 2500 1686">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <style>
+      .label{font-family: ui-sans-serif, system-ui, sans-serif; font-size:56px; font-weight:600; fill:#F1F5F9; letter-spacing:0.02em;}
+      .icon{stroke:#3B82F6; stroke-width:8; stroke-linecap:round; stroke-linejoin:round; fill:none;}
+      .card{fill:#1E293B; fill-opacity:0.6;}
+      .card-border{stroke:#334155; stroke-width:2;}
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="2500" height="1686" fill="url(#bgGrad)"/>
+  
+  <!-- Grid lines -->
+  <line x1="833" y1="0" x2="833" y2="1686" stroke="#334155" stroke-width="1" opacity="0.3"/>
+  <line x1="1666" y1="0" x2="1666" y2="1686" stroke="#334155" stroke-width="1" opacity="0.3"/>
+  <line x1="0" y1="843" x2="2500" y2="843" stroke="#334155" stroke-width="1" opacity="0.3"/>
+
+  <!-- Top accent - Blue for Tenant -->
+  <rect x="0" y="0" width="2500" height="6" fill="#3B82F6"/>
+
+  <!-- Row 1 -->
+  
+  <!-- My Room / ห้องของฉัน -->
+  <g transform="translate(0,0)">
+    <rect x="60" y="60" width="713" height="723" rx="32" class="card card-border"/>
+    <g transform="translate(416,340)" class="icon">
+      <path d="M-80,30 L0,-60 L80,30" stroke-width="8"/>
+      <path d="M-60,30 L-60,80 L60,80 L60,30" stroke-width="8"/>
+      <rect x="-20" y="30" width="40" height="50" rx="4" stroke-width="6" fill="#3B82F6" fill-opacity="0.2"/>
+    </g>
+    <text x="416" y="620" text-anchor="middle" class="label">ห้องของฉัน</text>
+  </g>
+
+  <!-- Bills / บิลค่าเช่า -->
+  <g transform="translate(833,0)">
+    <rect x="60" y="60" width="713" height="723" rx="32" class="card card-border"/>
+    <g transform="translate(416,340)" class="icon">
+      <path d="M-70,-80 L-70,80 L-50,60 L-30,80 L-10,60 L10,80 L30,60 L50,80 L70,60 L70,-80 Z" stroke-width="6" fill="#3B82F6" fill-opacity="0.15"/>
+      <line x1="-40" y1="-40" x2="40" y2="-40" stroke-width="6"/>
+      <line x1="-40" y1="0" x2="40" y2="0" stroke-width="6"/>
+      <line x1="-40" y1="40" x2="10" y2="40" stroke-width="6"/>
+    </g>
+    <text x="416" y="620" text-anchor="middle" class="label">บิลค่าเช่า</text>
+  </g>
+
+  <!-- Payment / ชำระเงิน -->
+  <g transform="translate(1666,0)">
+    <rect x="60" y="60" width="714" height="723" rx="32" class="card card-border"/>
+    <g transform="translate(417,340)" class="icon">
+      <rect x="-70" y="-50" width="140" height="100" rx="12" stroke-width="6" fill="#3B82F6" fill-opacity="0.15"/>
+      <circle cx="0" cy="0" r="25" stroke-width="6"/>
+      <path d="M-10,-10 L10,10 M10,-10 L-10,10" stroke-width="5"/>
+    </g>
+    <text x="417" y="620" text-anchor="middle" class="label">ชำระเงิน</text>
+  </g>
+
+  <!-- Row 2 -->
+
+  <!-- Maintenance / แจ้งซ่อม -->
+  <g transform="translate(0,843)">
+    <rect x="60" y="60" width="713" height="723" rx="32" class="card card-border"/>
+    <g transform="translate(416,340)" class="icon">
+      <path d="M-60,-60 L-20,-20 L20,-60 L60,-20 L20,20 L60,60 L20,60 L-20,20 L-60,60 L-60,20 L-20,-20" stroke-width="6" fill="#3B82F6" fill-opacity="0.15"/>
+      <circle cx="40" cy="40" r="30" stroke-width="6"/>
+    </g>
+    <text x="416" y="620" text-anchor="middle" class="label">แจ้งซ่อม</text>
+  </g>
+
+  <!-- Contact / ติดต่อเจ้าของ -->
+  <g transform="translate(833,843)">
+    <rect x="60" y="60" width="713" height="723" rx="32" class="card card-border"/>
+    <g transform="translate(416,340)" class="icon">
+      <rect x="-70" y="-50" width="140" height="100" rx="12" stroke-width="6" fill="#3B82F6" fill-opacity="0.15"/>
+      <path d="M-70,-50 L0,20 L70,-50" stroke-width="6"/>
+      <line x1="-70" y1="50" x2="-30" y2="10" stroke-width="5"/>
+      <line x1="70" y1="50" x2="30" y2="10" stroke-width="5"/>
+    </g>
+    <text x="416" y="620" text-anchor="middle" class="label">ติดต่อเจ้าของ</text>
+  </g>
+
+  <!-- Logout -->
+  <g transform="translate(1666,843)">
+    <rect x="60" y="60" width="714" height="723" rx="32" class="card card-border"/>
+    <g transform="translate(417,340)" class="icon" style="stroke:#EF4444;">
+      <!-- Door frame -->
+      <rect x="-60" y="-70" width="80" height="140" rx="8" stroke-width="6" fill="#EF4444" fill-opacity="0.15"/>
+      <!-- Arrow pointing out -->
+      <line x1="10" y1="0" x2="70" y2="0" stroke-width="8"/>
+      <polyline points="45,-25 70,0 45,25" stroke-width="8" fill="none"/>
+      <!-- Door handle -->
+      <circle cx="-10" cy="0" r="8" stroke-width="5" fill="#EF4444" fill-opacity="0.3"/>
+    </g>
+    <text x="417" y="620" text-anchor="middle" class="label" style="fill:#F87171;">Logout</text>
+  </g>
+</svg>
+

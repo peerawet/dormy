@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1686" viewBox="0 0 2500 1686">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <style>
+      .label{font-family: ui-sans-serif, system-ui, sans-serif; font-size:56px; font-weight:600; fill:#F1F5F9; letter-spacing:0.02em;}
+      .icon{stroke:#10B981; stroke-width:8; stroke-linecap:round; stroke-linejoin:round; fill:none;}
+      .card{fill:#1E293B; fill-opacity:0.6;}
+      .card-border{stroke:#334155; stroke-width:2;}
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="2500" height="1686" fill="url(#bgGrad)"/>
+  
+  <!-- Grid lines -->
+  <line x1="833" y1="0" x2="833" y2="1686" stroke="#334155" stroke-width="1" opacity="0.3"/>
+  <line x1="1666" y1="0" x2="1666" y2="1686" stroke="#334155" stroke-width="1" opacity="0.3"/>
+  <line x1="0" y1="843" x2="2500" y2="843" stroke="#334155" stroke-width="1" opacity="0.3"/>
+
+  <!-- Top accent - Green for Owner -->
+  <rect x="0" y="0" width="2500" height="6" fill="#10B981"/>
+
+  <!-- Row 1 -->
+  
+  <!-- Dashboard -->
+  <g transform="translate(0,0)">
+    <rect x="60" y="60" width="713" height="723" rx="32" class="card card-border"/>
+    <g transform="translate(416,340)" class="icon">
+      <rect x="-120" y="20" width="48" height="100" rx="8" stroke-width="6" fill="#10B981" fill-opacity="0.2"/>
+      <rect x="-36" y="-40" width="48" height="160" rx="8" stroke-width="6" fill="#10B981" fill-opacity="0.3"/>
+      <rect x="48" y="-10" width="48" height="130" rx="8" stroke-width="6" fill="#10B981" fill-opacity="0.2"/>
+    </g>
+    <text x="416" y="620" text-anchor="middle" class="label">Dashboard</text>
+  </g>
+
+  <!-- Bills -->
+  <g transform="translate(833,0)">
+    <rect x="60" y="60" width="713" height="723" rx="32" class="card card-border"/>
+    <g transform="translate(416,340)" class="icon">
+      <path d="M-70,-80 L-70,80 L-50,60 L-30,80 L-10,60 L10,80 L30,60 L50,80 L70,60 L70,-80 Z" stroke-width="6" fill="#10B981" fill-opacity="0.15"/>
+      <line x1="-40" y1="-40" x2="40" y2="-40" stroke-width="6"/>
+      <line x1="-40" y1="0" x2="40" y2="0" stroke-width="6"/>
+      <line x1="-40" y1="40" x2="10" y2="40" stroke-width="6"/>
+    </g>
+    <text x="416" y="620" text-anchor="middle" class="label">Bills</text>
+  </g>
+
+  <!-- Tenants -->
+  <g transform="translate(1666,0)">
+    <rect x="60" y="60" width="714" height="723" rx="32" class="card card-border"/>
+    <g transform="translate(417,340)" class="icon">
+      <circle cx="-40" cy="-30" r="36" stroke-width="6" fill="#10B981" fill-opacity="0.2"/>
+      <path d="M-100,70 Q-100,20 -40,20 Q20,20 20,70" stroke-width="6" fill="#10B981" fill-opacity="0.1"/>
+      <circle cx="50" cy="-20" r="28" stroke-width="6" fill="#10B981" fill-opacity="0.15"/>
+      <path d="M10,70 Q10,30 50,30 Q90,30 90,70" stroke-width="6" fill="#10B981" fill-opacity="0.08"/>
+    </g>
+    <text x="417" y="620" text-anchor="middle" class="label">Tenants</text>
+  </g>
+
+  <!-- Row 2 -->
+
+  <!-- Expenses -->
+  <g transform="translate(0,843)">
+    <rect x="60" y="60" width="713" height="723" rx="32" class="card card-border"/>
+    <g transform="translate(416,340)" class="icon">
+      <rect x="-80" y="-50" width="160" height="100" rx="16" stroke-width="6" fill="#10B981" fill-opacity="0.15"/>
+      <circle cx="40" cy="0" r="20" stroke-width="6" fill="#10B981" fill-opacity="0.3"/>
+      <path d="M-80,-20 L-80,-60 Q-80,-80 -60,-80 L60,-80 Q80,-80 80,-60 L80,-50" stroke-width="6"/>
+    </g>
+    <text x="416" y="620" text-anchor="middle" class="label">Expenses</text>
+  </g>
+
+  <!-- Rooms -->
+  <g transform="translate(833,843)">
+    <rect x="60" y="60" width="713" height="723" rx="32" class="card card-border"/>
+    <g transform="translate(416,340)" class="icon">
+      <rect x="-70" y="-60" width="140" height="140" rx="12" stroke-width="6" fill="#10B981" fill-opacity="0.15"/>
+      <rect x="-45" y="-35" width="35" height="35" rx="6" stroke-width="5"/>
+      <rect x="10" y="-35" width="35" height="35" rx="6" stroke-width="5"/>
+      <rect x="-45" y="20" width="35" height="35" rx="6" stroke-width="5"/>
+      <rect x="10" y="20" width="35" height="35" rx="6" stroke-width="5"/>
+    </g>
+    <text x="416" y="620" text-anchor="middle" class="label">Rooms</text>
+  </g>
+
+  <!-- Logout -->
+  <g transform="translate(1666,843)">
+    <rect x="60" y="60" width="714" height="723" rx="32" class="card card-border"/>
+    <g transform="translate(417,340)" class="icon" style="stroke:#EF4444;">
+      <!-- Door frame -->
+      <rect x="-60" y="-70" width="80" height="140" rx="8" stroke-width="6" fill="#EF4444" fill-opacity="0.15"/>
+      <!-- Arrow pointing out -->
+      <line x1="10" y1="0" x2="70" y2="0" stroke-width="8"/>
+      <polyline points="45,-25 70,0 45,25" stroke-width="8" fill="none"/>
+      <!-- Door handle -->
+      <circle cx="-10" cy="0" r="8" stroke-width="5" fill="#EF4444" fill-opacity="0.3"/>
+    </g>
+    <text x="417" y="620" text-anchor="middle" class="label" style="fill:#F87171;">Logout</text>
+  </g>
+</svg>
+

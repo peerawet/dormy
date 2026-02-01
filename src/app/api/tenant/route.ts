@@ -57,7 +57,13 @@ export async function GET(req: Request) {
 
   const tenants = await prisma.tenant.findMany({
     where: whereClause,
-    include: {
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      idCard: true,
+      address: true,
+      linkCode: true,
       rooms: {
         include: {
           room: {
@@ -167,8 +173,8 @@ export async function POST(req: Request) {
       phone: tenant.phone,
       idCard: tenant.idCard,
       address: tenant.address,
+      linkCode: tenant.linkCode,
       rooms: tenant.rooms,
-      // ไม่ส่ง password กลับไป
     },
   });
 }
@@ -286,8 +292,8 @@ export async function PUT(req: Request) {
       phone: updated.phone,
       idCard: updated.idCard,
       address: updated.address,
+      linkCode: updated.linkCode,
       rooms: updated.rooms,
-      // ไม่ส่ง password กลับไป
     },
   });
 }

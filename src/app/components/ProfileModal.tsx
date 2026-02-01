@@ -23,11 +23,14 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     idCard: "",
     email: "",
     promptpay: "",
+    linkCode: "",
   });
   const [loading, setLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [message, setMessage] = useState("");
+  const [copied, setCopied] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldValidation>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const auth = useSelector((state: RootState) => state.auth);
@@ -46,12 +49,14 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         idCard: "",
         email: "",
         promptpay: "",
+        linkCode: "",
       });
       setMessage("");
       setLoading(false);
       setDataLoaded(false);
       setFieldErrors({});
       setHasSubmitted(false);
+      setCopied(false);
     }
   }, [isOpen, auth.token]);
 
@@ -106,6 +111,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           idCard: data.user.idCard || "",
           email: data.user.email || "",
           promptpay: data.user.promptpay || "",
+          linkCode: data.user.linkCode || "",
         });
         setDataLoaded(true);
       } else {
@@ -115,6 +121,42 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       console.error("Error fetching profile:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleCopyLinkCode() {
+    if (profile.linkCode) {
+      await navigator.clipboard.writeText(profile.linkCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  async function handleRegenerateLinkCode() {
+    if (!confirm("คุณต้องการสร้างรหัสเชื่อมต่อใหม่หรือไม่?\n\nรหัสเดิมจะใช้งานไม่ได้อีกต่อไป")) {
+      return;
+    }
+
+    setRegenerating(true);
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${auth.token}` },
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setProfile({ ...profile, linkCode: data.linkCode });
+        setMessage("สร้างรหัสเชื่อมต่อใหม่เรียบร้อยแล้ว");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage(data.message || "เกิดข้อผิดพลาด");
+      }
+    } catch (error) {
+      console.error("Error regenerating link code:", error);
+      setMessage("เกิดข้อผิดพลาดในการสร้างรหัสใหม่");
+    } finally {
+      setRegenerating(false);
     }
   }
 
@@ -186,6 +228,62 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
+          {/* LINE Link Code Section */}
+          {!loading && dataLoaded && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">🔗</span>
+                <h3 className="font-semibold text-green-900">รหัสเชื่อมต่อ LINE</h3>
+              </div>
+              <p className="text-green-700 text-sm mb-3">
+                ใช้รหัสนี้เพื่อเชื่อมต่อบัญชี LINE กับ Dormy
+              </p>
+              {profile.linkCode ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-white px-4 py-3 rounded-lg border border-green-300 font-mono text-sm text-gray-800 truncate">
+                      {profile.linkCode}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyLinkCode}
+                      className={`px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                        copied
+                          ? "bg-green-600 text-white"
+                          : "bg-green-100 text-green-700 hover:bg-green-200"
+                      }`}
+                    >
+                      {copied ? "✓ คัดลอกแล้ว" : "📋 คัดลอก"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRegenerateLinkCode}
+                      disabled={regenerating}
+                      className="px-4 py-3 bg-orange-100 text-orange-700 rounded-lg font-medium hover:bg-orange-200 transition-colors disabled:opacity-50"
+                    >
+                      {regenerating ? "⏳" : "🔄"} สร้างใหม่
+                    </button>
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">
+                    💡 เปิด LINE → แชทกับ Dormy OA → เลือก "เจ้าของหอพัก" → พิมพ์รหัสนี้
+                  </p>
+                </>
+              ) : (
+                <div className="text-center py-2">
+                  <p className="text-green-700 text-sm mb-3">ยังไม่มีรหัสเชื่อมต่อ</p>
+                  <button
+                    type="button"
+                    onClick={handleRegenerateLinkCode}
+                    disabled={regenerating}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    {regenerating ? "⏳ กำลังสร้าง..." : "✨ สร้างรหัสเชื่อมต่อ"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Info Banner */}
           <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <div className="flex items-center gap-2 mb-2">

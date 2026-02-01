@@ -31,6 +31,7 @@ type Tenant = {
   phone: string;
   idCard?: string;
   address: string;
+  linkCode?: string;
   rooms: {
     room: {
       id: number;
@@ -169,6 +170,36 @@ export default function TenantsPage() {
     }
   };
 
+  const handleRegenerateLinkCode = async (tenantId: number): Promise<string | null> => {
+    if (!auth.token) return null;
+    
+    try {
+      const res = await fetch("/api/tenant/link-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify({ tenantId }),
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        // Refresh tenants list to get updated linkCode
+        dispatch(fetchTenants({ token: auth.token }));
+        showAlert("สร้างรหัสเชื่อมต่อใหม่เรียบร้อยแล้ว", "success");
+        return data.linkCode;
+      } else {
+        showAlert(data.message || "เกิดข้อผิดพลาด", "error");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error regenerating link code:", error);
+      showAlert("เกิดข้อผิดพลาดในการสร้างรหัสใหม่", "error");
+      return null;
+    }
+  };
+
   const renderCardView = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {tenants.map((tenant) => (
@@ -180,6 +211,7 @@ export default function TenantsPage() {
             setTenantToDelete(tenant);
             setConfirmModalOpen(true);
           }}
+          onRegenerateLinkCode={handleRegenerateLinkCode}
         />
       ))}
     </div>
@@ -193,6 +225,7 @@ export default function TenantsPage() {
         setTenantToDelete(tenant);
         setConfirmModalOpen(true);
       }}
+      onRegenerateLinkCode={handleRegenerateLinkCode}
     />
   );
 
@@ -334,6 +367,7 @@ export default function TenantsPage() {
           editTenant={editTenant}
           rooms={rooms}
           loading={submitting}
+          onRegenerateLinkCode={handleRegenerateLinkCode}
         />
 
         {/* Confirm Modal */}

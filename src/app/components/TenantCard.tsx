@@ -1,3 +1,6 @@
+"use client";
+import { useState } from "react";
+
 interface TenantCardProps {
   tenant: {
     id: number;
@@ -5,6 +8,7 @@ interface TenantCardProps {
     phone: string;
     idCard?: string;
     address: string;
+    linkCode?: string;
     rooms: {
       room: {
         id: number;
@@ -18,13 +22,36 @@ interface TenantCardProps {
   };
   onEdit: () => void;
   onDelete: () => void;
+  onRegenerateLinkCode?: (tenantId: number) => Promise<string | null>;
 }
 
 export default function TenantCard({
   tenant,
   onEdit,
   onDelete,
+  onRegenerateLinkCode,
 }: TenantCardProps) {
+  const [copied, setCopied] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+
+  const handleCopyLinkCode = async () => {
+    if (tenant.linkCode) {
+      await navigator.clipboard.writeText(tenant.linkCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleRegenerateLinkCode = async () => {
+    if (!onRegenerateLinkCode) return;
+    if (!confirm("คุณต้องการสร้างรหัสเชื่อมต่อใหม่หรือไม่?\n\nรหัสเดิมจะใช้งานไม่ได้อีกต่อไป")) {
+      return;
+    }
+    setRegenerating(true);
+    await onRegenerateLinkCode(tenant.id);
+    setRegenerating(false);
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
@@ -60,6 +87,43 @@ export default function TenantCard({
           </span>
         </div>
       </div>
+
+      {/* Link Code */}
+      {tenant.linkCode && (
+        <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-green-700 mb-1">🔗 Link Code</div>
+              <code className="text-xs font-mono bg-white px-2 py-1 rounded border border-green-200 block truncate" title={tenant.linkCode}>
+                {tenant.linkCode}
+              </code>
+            </div>
+            <div className="flex gap-1">
+              <button
+                onClick={handleCopyLinkCode}
+                className={`px-2 py-1 rounded text-xs transition-colors ${
+                  copied
+                    ? "bg-green-600 text-white"
+                    : "bg-green-100 text-green-700 hover:bg-green-200"
+                }`}
+                title="คัดลอกรหัส"
+              >
+                {copied ? "✓" : "📋"}
+              </button>
+              {onRegenerateLinkCode && (
+                <button
+                  onClick={handleRegenerateLinkCode}
+                  disabled={regenerating}
+                  className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs hover:bg-orange-200 disabled:opacity-50"
+                  title="สร้างรหัสใหม่"
+                >
+                  {regenerating ? "⏳" : "🔄"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Rooms */}
       <div className="mb-4">
