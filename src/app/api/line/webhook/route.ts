@@ -3,6 +3,15 @@ import crypto from "crypto";
 import { replyMessage, getUserProfile } from "@/lib/line";
 import { prisma } from "@/lib/prisma";
 import { setUserRichMenu, unlinkUserRichMenu } from "@/lib/line-rich-menu";
+import {
+  buildDashboardFlex,
+  buildBillsFlex,
+  buildTenantsFlex,
+  buildExpensesFlex,
+  buildRoomsFlex,
+  buildMyRoomFlex,
+  buildMyBillsFlex,
+} from "@/lib/line-flex";
 
 const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || "";
 const BASE_URL = process.env.NEXTAUTH_URL || "https://dormy.forifi.xyz";
@@ -350,38 +359,38 @@ async function handlePostbackEvent(event: any) {
       // Owner Actions (Require verified linkCode)
       // ==========================================
       case "dashboard":
-        await replyWithLink(replyToken, "📊 Dashboard", "/dashboard", account);
+        await handleDashboard(replyToken, account);
         break;
 
       case "bills":
-        await replyWithLink(replyToken, "💰 Bills", "/dormitory", account);
+        await handleBills(replyToken, account);
         break;
 
       case "tenants":
-        await replyWithLink(replyToken, "👥 Tenants", "/tenants", account);
+        await handleTenants(replyToken, account);
         break;
 
       case "expenses":
-        await replyWithLink(replyToken, "💸 Expenses", "/expenses", account);
+        await handleExpenses(replyToken, account);
         break;
 
       case "rooms":
-        await replyWithLink(replyToken, "🏠 Rooms", "/dormitory", account);
+        await handleRooms(replyToken, account);
         break;
 
       // ==========================================
       // Tenant Actions (Require verified linkCode)
       // ==========================================
       case "my_room":
-        await replyWithLink(replyToken, "🏠 ห้องของฉัน", "/tenant/room", account);
+        await handleMyRoom(replyToken, account);
         break;
 
       case "my_bills":
-        await replyWithLink(replyToken, "💰 บิลค่าเช่า", "/tenant/bills", account);
+        await handleMyBills(replyToken, account);
         break;
 
       case "payment":
-        await replyWithLink(replyToken, "💳 ชำระเงิน", "/tenant/payment", account);
+        await handlePayment(replyToken, account);
         break;
 
       case "maintenance":
@@ -447,28 +456,374 @@ async function handleRoleSelection(
   }
 }
 
-// Helper: Reply with link
-async function replyWithLink(
-  replyToken: string,
-  title: string,
-  path: string,
-  account: any
-) {
-  const url = `${BASE_URL}${path}`;
+// ==========================================
+// Owner Flex Message Handlers
+// ==========================================
 
-  if (!account?.isVerified) {
-    await replyMessage(replyToken, [
-      {
-        type: "text",
-        text: `${title}\n\nกรุณาเชื่อมต่อบัญชีก่อนใช้งาน\nเลือกประเภทผู้ใช้งานจากเมนูด้านล่าง`,
-      },
-    ]);
+// Dashboard: Show summary stats
+async function handleDashboard(replyToken: string, account: any) {
+  if (!account?.userId) {
+    await replyMessage(replyToken, [{ type: "text", text: "ไม่พบข้อมูลผู้ใช้" }]);
     return;
   }
 
-  await replyMessage(replyToken, [
-    { type: "text", text: `${title}\n\n${url}` },
-  ]);
+  try {
+    const userId = account.userId;
+    
+    // Get all rooms for this owner
+    const rooms = await prisma.room.findMany({
+      where: { dormitory: { ownerId: userId } },
+      include: {
+        tenantRooms: true,
+        bills: {
+          where: {
+            billDate: {
+              gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+            },
+          },
+        },
+      },
+    });
+
+    const totalRooms = rooms.length;
+    const occupiedRooms = rooms.filter((r) => r.tenantRooms.length > 0).length;
+    const vacantRooms = totalRooms - occupiedRooms;
+    
+    // Calculate revenue and unpaid bills
+    let totalRevenue = 0;
+    const unpaidBills = 0;
+    rooms.forEach((room) => {
+      room.bills.forEach((bill) => {
+        totalRevenue += bill.total;
+      });
+    });
+
+    // Get owner name
+    const owner = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    });
+
+    const flexMessage = buildDashboardFlex({
+      totalRooms,
+      occupiedRooms,
+      vacantRooms,
+      totalRevenue,
+      unpaidBills,
+      ownerName: owner?.name || "เจ้าของหอพัก",
+    });
+
+    await replyMessage(replyToken, [flexMessage]);
+  } catch (error) {
+    console.error("Error in handleDashboard:", error);
+    await replyMessage(replyToken, [
+      { type: "text", text: "เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่" },
+    ]);
+  }
+}
+
+// Bills: Show recent bills
+async function handleBills(replyToken: string, account: any) {
+  if (!account?.userId) {
+    await replyMessage(replyToken, [{ type: "text", text: "ไม่พบข้อมูลผู้ใช้" }]);
+    return;
+  }
+
+  try {
+    const bills = await prisma.bill.findMany({
+      where: {
+        room: { dormitory: { ownerId: account.userId } },
+      },
+      include: {
+        room: true,
+        tenant: true,
+      },
+      orderBy: { billDate: "desc" },
+      take: 10,
+    });
+
+    const billsData = bills.map((bill) => ({
+      id: bill.id,
+      roomName: bill.room.name,
+      tenantName: bill.tenant?.name || "ไม่ระบุ",
+      total: bill.total,
+      billDate: bill.billDate,
+      isPaid: false, // Adjust based on your payment tracking
+    }));
+
+    const flexMessage = buildBillsFlex(billsData);
+    await replyMessage(replyToken, [flexMessage]);
+  } catch (error) {
+    console.error("Error in handleBills:", error);
+    await replyMessage(replyToken, [
+      { type: "text", text: "เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่" },
+    ]);
+  }
+}
+
+// Tenants: Show tenant list
+async function handleTenants(replyToken: string, account: any) {
+  if (!account?.userId) {
+    await replyMessage(replyToken, [{ type: "text", text: "ไม่พบข้อมูลผู้ใช้" }]);
+    return;
+  }
+
+  try {
+    const tenants = await prisma.tenant.findMany({
+      where: {
+        rooms: {
+          some: {
+            room: { dormitory: { ownerId: account.userId } },
+          },
+        },
+      },
+      include: {
+        rooms: {
+          include: {
+            room: {
+              include: { dormitory: true },
+            },
+          },
+        },
+      },
+    });
+
+    const tenantsData = tenants.map((tenant) => ({
+      name: tenant.name,
+      phone: tenant.phone,
+      roomName: tenant.rooms[0]?.room.name || "-",
+      dormName: tenant.rooms[0]?.room.dormitory.name || "-",
+    }));
+
+    const flexMessage = buildTenantsFlex(tenantsData);
+    await replyMessage(replyToken, [flexMessage]);
+  } catch (error) {
+    console.error("Error in handleTenants:", error);
+    await replyMessage(replyToken, [
+      { type: "text", text: "เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่" },
+    ]);
+  }
+}
+
+// Expenses: Show expense summary
+async function handleExpenses(replyToken: string, account: any) {
+  if (!account?.userId) {
+    await replyMessage(replyToken, [{ type: "text", text: "ไม่พบข้อมูลผู้ใช้" }]);
+    return;
+  }
+
+  try {
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+
+    const expenses = await prisma.expense.findMany({
+      where: {
+        dormitory: { ownerId: account.userId },
+        expenseDate: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+      },
+      orderBy: { expenseDate: "desc" },
+      take: 5,
+    });
+
+    const totalThisMonth = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+    const expensesData = expenses.map((exp) => ({
+      type: exp.type,
+      description: exp.description || "",
+      amount: exp.amount,
+      date: exp.expenseDate,
+    }));
+
+    const flexMessage = buildExpensesFlex({
+      totalThisMonth,
+      expenses: expensesData,
+    });
+
+    await replyMessage(replyToken, [flexMessage]);
+  } catch (error) {
+    console.error("Error in handleExpenses:", error);
+    await replyMessage(replyToken, [
+      { type: "text", text: "เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่" },
+    ]);
+  }
+}
+
+// Rooms: Show room list with occupancy
+async function handleRooms(replyToken: string, account: any) {
+  if (!account?.userId) {
+    await replyMessage(replyToken, [{ type: "text", text: "ไม่พบข้อมูลผู้ใช้" }]);
+    return;
+  }
+
+  try {
+    const rooms = await prisma.room.findMany({
+      where: { dormitory: { ownerId: account.userId } },
+      include: {
+        dormitory: true,
+        tenantRooms: {
+          include: { tenant: true },
+        },
+      },
+      orderBy: [{ dormitory: { name: "asc" } }, { name: "asc" }],
+    });
+
+    const roomsData = rooms.map((room) => ({
+      name: room.name,
+      dormName: room.dormitory.name,
+      price: room.price,
+      isOccupied: room.tenantRooms.length > 0,
+      tenantName: room.tenantRooms[0]?.tenant.name,
+    }));
+
+    const flexMessage = buildRoomsFlex(roomsData);
+    await replyMessage(replyToken, [flexMessage]);
+  } catch (error) {
+    console.error("Error in handleRooms:", error);
+    await replyMessage(replyToken, [
+      { type: "text", text: "เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่" },
+    ]);
+  }
+}
+
+// ==========================================
+// Tenant Flex Message Handlers
+// ==========================================
+
+// My Room: Show tenant's room details
+async function handleMyRoom(replyToken: string, account: any) {
+  if (!account?.tenantId) {
+    await replyMessage(replyToken, [{ type: "text", text: "ไม่พบข้อมูลผู้เช่า" }]);
+    return;
+  }
+
+  try {
+    const tenantRoom = await prisma.tenantRoom.findFirst({
+      where: { tenantId: account.tenantId },
+      include: {
+        tenant: true,
+        room: {
+          include: {
+            dormitory: {
+              include: { owner: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!tenantRoom) {
+      await replyMessage(replyToken, [
+        { type: "text", text: "ไม่พบข้อมูลห้องพัก" },
+      ]);
+      return;
+    }
+
+    const { room, tenant } = tenantRoom;
+    const { dormitory } = room;
+    const { owner } = dormitory;
+
+    const flexMessage = buildMyRoomFlex({
+      tenantName: tenant.name,
+      roomName: room.name,
+      dormName: dormitory.name,
+      dormAddress: dormitory.address || "",
+      price: room.price,
+      ownerName: owner.name,
+      ownerPhone: owner.phone,
+    });
+
+    await replyMessage(replyToken, [flexMessage]);
+  } catch (error) {
+    console.error("Error in handleMyRoom:", error);
+    await replyMessage(replyToken, [
+      { type: "text", text: "เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่" },
+    ]);
+  }
+}
+
+// My Bills: Show tenant's bills
+async function handleMyBills(replyToken: string, account: any) {
+  if (!account?.tenantId) {
+    await replyMessage(replyToken, [{ type: "text", text: "ไม่พบข้อมูลผู้เช่า" }]);
+    return;
+  }
+
+  try {
+    const bills = await prisma.bill.findMany({
+      where: { tenantId: account.tenantId },
+      orderBy: { billDate: "desc" },
+      take: 5,
+    });
+
+    const billsData = bills.map((bill) => ({
+      id: bill.id,
+      billDate: bill.billDate,
+      rent: bill.rent,
+      water: bill.water,
+      electric: bill.electric,
+      total: bill.total,
+      isPaid: false, // Adjust based on your payment tracking
+    }));
+
+    const flexMessage = buildMyBillsFlex(billsData);
+    await replyMessage(replyToken, [flexMessage]);
+  } catch (error) {
+    console.error("Error in handleMyBills:", error);
+    await replyMessage(replyToken, [
+      { type: "text", text: "เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่" },
+    ]);
+  }
+}
+
+// Payment: Show payment instructions
+async function handlePayment(replyToken: string, account: any) {
+  if (!account?.tenantId) {
+    await replyMessage(replyToken, [{ type: "text", text: "ไม่พบข้อมูลผู้เช่า" }]);
+    return;
+  }
+
+  try {
+    // Get owner's promptpay
+    const tenantRoom = await prisma.tenantRoom.findFirst({
+      where: { tenantId: account.tenantId },
+      include: {
+        room: {
+          include: {
+            dormitory: {
+              include: { owner: true },
+            },
+          },
+        },
+      },
+    });
+
+    const owner = tenantRoom?.room?.dormitory?.owner;
+    const promptpay = owner?.promptpay;
+
+    if (promptpay) {
+      await replyMessage(replyToken, [
+        {
+          type: "text",
+          text: `💳 ช่องทางชำระเงิน\n\n📱 PromptPay: ${promptpay}\n👤 ${owner.name}\n\n💡 หลังชำระเงินแล้ว กรุณาส่งสลิปให้เจ้าของหอพัก`,
+        },
+      ]);
+    } else {
+      await replyMessage(replyToken, [
+        {
+          type: "text",
+          text: "💳 ชำระเงิน\n\nกรุณาติดต่อเจ้าของหอพักเพื่อสอบถามช่องทางการชำระเงิน",
+        },
+      ]);
+    }
+  } catch (error) {
+    console.error("Error in handlePayment:", error);
+    await replyMessage(replyToken, [
+      { type: "text", text: "เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่" },
+    ]);
+  }
 }
 
 // Helper: Contact owner
