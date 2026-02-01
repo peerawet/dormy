@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { loginStart, loginSuccess, loginFailure } from "@/store/authSlice";
 import { RootState } from "@/store";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -168,43 +167,6 @@ export default function LoginPage() {
                   <span>เข้าสู่ระบบ</span>
                 </>
               )}
-            </button>
-
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white/80 text-gray-500">หรือ</span>
-              </div>
-            </div>
-
-            {/* Google Sign-In */}
-            <button
-              type="button"
-              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-              className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3 rounded-xl font-semibold text-base shadow-md flex items-center justify-center gap-3 transition-all"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 48 48"
-                className="h-5 w-5"
-              >
-                <path
-                  fill="#EA4335"
-                  d="M24 9.5c3.7 0 6.9 1.4 9.1 3.6l6.8-6.8C35.5 2.7 30.2 0 24 0 14.6 0 6.5 5.7 2.6 14l8.5 6.6C13.5 14.1 18.4 9.5 24 9.5z"
-                />
-                <path
-                  fill="#4285F4"
-                  d="M46.5 20H24v8.9h12.9C34.3 34.2 29.8 37.5 24 37.5c-8.4 0-15.5-6.9-15.5-15.5S15.6 6.5 24 6.5c3.7 0 6.9 1.3 9.4 3.4l6.7-6.7C35.6 0.8 30.2 0 24 0 10.7 0 0 10.7 0 24s10.7 24 24 24c11.8 0 21.5-8.3 23.9-19.4l-1.4-4.6z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M45.8 14.4l-8.1 6.3c-1.3-3.9-5.2-6.7-9.7-6.7-5.6 0-10.5 4.7-10.5 10.5s4.7 10.5 10.5 10.5c4.5 0 8.4-2.8 9.7-6.7l8.1 6.3C40.7 40.2 32.9 48 24 48 10.7 48 0 37.3 0 24S10.7 0 24 0c8.5 0 16.4 3.2 22.3 8.5l-6.5 5.9z"
-                />
-              </svg>
-              <span>เข้าสู่ระบบด้วย Google</span>
             </button>
 
             {/* Register Link */}

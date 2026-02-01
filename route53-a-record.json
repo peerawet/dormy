@@ -1,0 +1,18 @@
+{
+    "Changes":  [
+                    {
+                        "ResourceRecordSet":  {
+                                                  "TTL":  300,
+                                                  "Name":  "dormy.forifi.xyz",
+                                                  "Type":  "A",
+                                                  "ResourceRecords":  [
+                                                                          {
+                                                                              "Value":  "76.76.21.21"
+                                                                          }
+                                                                      ]
+                                              },
+                        "Action":  "UPSERT"
+                    }
+                ],
+    "Comment":  "Add Vercel A record for dormy.forifi.xyz"
+}

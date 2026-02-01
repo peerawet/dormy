@@ -84,7 +84,6 @@ _Deployed on AWS ECS with RDS and Load Balancer for high availability and scalab
 - **jsPDF** - PDF Generation
 - **html2canvas** - Screenshot to Canvas
 - **xlsx** - Excel File Processing
-- **Google Sheets API** - Integration with Google Sheets
 
 ## 🚀 การติดตั้งและใช้งาน
 
@@ -118,10 +117,6 @@ DATABASE_URL="postgresql://username:password@localhost:5432/dormy"
 # NextAuth
 NEXTAUTH_URL="http://localhost:4000"
 NEXTAUTH_SECRET="your-secret-key"
-
-# Google Sheets API (Optional)
-GOOGLE_SHEETS_PRIVATE_KEY="your-google-private-key"
-GOOGLE_SHEETS_CLIENT_EMAIL="your-google-client-email"
 ```
 
 ### 4. เตรียม Database
@@ -395,7 +390,6 @@ _Deployed on AWS ECS with RDS and Load Balancer for high availability and scalab
 - **jsPDF** - PDF Generation
 - **html2canvas** - Screenshot to Canvas
 - **xlsx** - Excel File Processing
-- **Google Sheets API** - Integration with Google Sheets
 
 ## 🚀 Installation and Usage
 
@@ -429,10 +423,6 @@ DATABASE_URL="postgresql://username:password@localhost:5432/dormy"
 # NextAuth
 NEXTAUTH_URL="http://localhost:4000"
 NEXTAUTH_SECRET="your-secret-key"
-
-# Google Sheets API (Optional)
-GOOGLE_SHEETS_PRIVATE_KEY="your-google-private-key"
-GOOGLE_SHEETS_CLIENT_EMAIL="your-google-client-email"
 ```
 
 ### 4. Prepare Database
