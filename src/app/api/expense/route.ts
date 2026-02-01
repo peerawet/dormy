@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 
+const JWT_SECRET = process.env.JWT_SECRET || "changeme";
+
 export async function GET(req: NextRequest) {
   try {
     // ตรวจสอบ authorization
@@ -11,7 +13,7 @@ export async function GET(req: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
       userId: number;
     };
 
@@ -128,33 +130,39 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ monthlyExpenses: results });
     }
 
-    if (groupBy === "type" && monthsParam > 1) {
-      // Aggregate expenses by type over the past `monthsParam` months ending at given month/year
-      const baseMonth = month ? parseInt(month) : new Date().getMonth() + 1;
-      const baseYear = year ? parseInt(year) : new Date().getFullYear();
+    if (groupBy === "type") {
+      // Aggregate expenses by type
+      if (monthsParam > 1) {
+        // Aggregate expenses by type over the past `monthsParam` months ending at given month/year
+        const baseMonth = month ? parseInt(month) : new Date().getMonth() + 1;
+        const baseYear = year ? parseInt(year) : new Date().getFullYear();
 
-      let startMonth = baseMonth - (monthsParam - 1);
-      let startYear = baseYear;
-      if (startMonth <= 0) {
-        startYear -= Math.ceil(Math.abs(startMonth) / 12);
-        startMonth = ((startMonth % 12) + 12) % 12; // convert to positive month 1-12
-        if (startMonth === 0) startMonth = 12;
+        let startMonth = baseMonth - (monthsParam - 1);
+        let startYear = baseYear;
+        if (startMonth <= 0) {
+          startYear -= Math.ceil(Math.abs(startMonth) / 12);
+          startMonth = ((startMonth % 12) + 12) % 12; // convert to positive month 1-12
+          if (startMonth === 0) startMonth = 12;
+        }
+
+        const startDate = new Date(startYear, startMonth - 1, 1);
+        const endDate = new Date(baseYear, baseMonth, 0, 23, 59, 59);
+
+        const expensesByType = await prisma.expense.groupBy({
+          by: ["type"],
+          where: {
+            dormitory: { ownerId: decoded.userId },
+            expenseDate: { gte: startDate, lte: endDate },
+          },
+          _sum: { amount: true },
+          _count: { id: true },
+        });
+
+        return NextResponse.json({ expensesByType });
+      } else {
+        // Single month - use existing expensesByType from above
+        return NextResponse.json({ expensesByType });
       }
-
-      const startDate = new Date(startYear, startMonth - 1, 1);
-      const endDate = new Date(baseYear, baseMonth, 0, 23, 59, 59);
-
-      const expensesByType = await prisma.expense.groupBy({
-        by: ["type"],
-        where: {
-          dormitory: { ownerId: decoded.userId },
-          expenseDate: { gte: startDate, lte: endDate },
-        },
-        _sum: { amount: true },
-        _count: { id: true },
-      });
-
-      return NextResponse.json({ expensesByType });
     }
 
     return NextResponse.json({
@@ -165,10 +173,18 @@ export async function GET(req: NextRequest) {
       },
       expensesByType,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching expenses:", error);
+    // Log more details in production for debugging
+    const errorMessage = error?.message || "Unknown error";
+    const errorStack = process.env.NODE_ENV === "development" ? error?.stack : undefined;
+    
     return NextResponse.json(
-      { error: "เกิดข้อผิดพลาดในการดึงข้อมูล" },
+      { 
+        error: "เกิดข้อผิดพลาดในการดึงข้อมูล",
+        message: process.env.NODE_ENV === "development" ? errorMessage : undefined,
+        stack: errorStack
+      },
       { status: 500 }
     );
   }
@@ -183,7 +199,7 @@ export async function POST(req: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
       userId: number;
     };
 
@@ -255,7 +271,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
       userId: number;
     };
 
@@ -331,7 +347,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
       userId: number;
     };
 
