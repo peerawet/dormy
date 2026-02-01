@@ -117,6 +117,11 @@ DATABASE_URL="postgresql://username:password@localhost:5432/dormy"
 # NextAuth
 NEXTAUTH_URL="http://localhost:4000"
 NEXTAUTH_SECRET="your-secret-key"
+
+# LINE OA
+LINE_CHANNEL_ID="your-line-channel-id"
+LINE_CHANNEL_SECRET="your-line-channel-secret"
+LINE_ACCESS_TOKEN="your-line-access-token"
 ```
 
 ### 4. เตรียม Database
@@ -423,6 +428,11 @@ DATABASE_URL="postgresql://username:password@localhost:5432/dormy"
 # NextAuth
 NEXTAUTH_URL="http://localhost:4000"
 NEXTAUTH_SECRET="your-secret-key"
+
+# LINE OA
+LINE_CHANNEL_ID="your-line-channel-id"
+LINE_CHANNEL_SECRET="your-line-channel-secret"
+LINE_ACCESS_TOKEN="your-line-access-token"
 ```
 
 ### 4. Prepare Database
