@@ -20,7 +20,6 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    promptpay: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -54,7 +53,6 @@ export default function RegisterPage() {
             : { isValid: false, message: "รูปแบบอีเมลไม่ถูกต้อง" };
         },
       ],
-      promptpay: [(value: string) => validators.promptpay(value)],
       password: [
         (value: string) => validators.required(value, "รหัสผ่าน"),
         (value: string) => validators.minLength(value, 6, "รหัสผ่าน"),
@@ -224,17 +222,6 @@ export default function RegisterPage() {
               placeholder="กรอกอีเมลของคุณ"
               required
               icon="📧"
-              disabled={loading}
-            />
-
-            {/* PromptPay Field */}
-            <ValidatedInput
-              label="หมายเลข PromptPay"
-              value={form.promptpay}
-              onChange={(value) => setForm((f) => ({ ...f, promptpay: value }))}
-              validation={fieldErrors.promptpay}
-              placeholder="เบอร์โทร 10 หลัก หรือเลขบัตรประชาชน 13 หลัก (ไม่บังคับ)"
-              icon="💳"
               disabled={loading}
             />
 

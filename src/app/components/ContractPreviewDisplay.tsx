@@ -4,11 +4,13 @@ import { useState } from "react";
 interface ContractPreviewDisplayProps {
   contract: any;
   token: string;
+  readOnly?: boolean;
 }
 
 export default function ContractPreviewDisplay({
   contract,
   token,
+  readOnly = false,
 }: ContractPreviewDisplayProps) {
   const [editMode, setEditMode] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
@@ -16,6 +18,7 @@ export default function ContractPreviewDisplay({
   const { tenant, room } = localContract;
 
   function handleDoubleClick(field: string, currentValue: string) {
+    if (readOnly) return; // Disable editing in read-only mode
     setEditMode(field);
     setEditValue(currentValue || "");
   }

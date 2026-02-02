@@ -180,6 +180,19 @@ export default function LoginPage() {
                 <span>สมัครสมาชิกฟรี</span>
               </Link>
             </div>
+
+            {/* Tenant Login Link */}
+            <div className="text-center mt-4">
+              <p className="text-gray-600 text-sm">
+                เป็นผู้เช่า?{" "}
+                <Link
+                  href="/tenant-login"
+                  className="text-purple-600 hover:text-purple-700 font-medium hover:underline"
+                >
+                  เข้าสู่ระบบที่นี่
+                </Link>
+              </p>
+            </div>
           </form>
 
           {/* Features */}

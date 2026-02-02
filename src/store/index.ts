@@ -8,6 +8,7 @@ import tenantReducer from "./tenantSlice";
 import expenseReducer from "./expenseSlice";
 import recurringExpenseReducer from "./recurringExpenseSlice";
 import dashboardReducer from "./dashboardSlice";
+import tenantAuthReducer from "./tenantAuthSlice";
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import { combineReducers } from "redux";
@@ -23,7 +24,7 @@ import {
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["auth"],
+  whitelist: ["auth", "tenantAuth"],
 };
 
 const rootReducer = combineReducers({
@@ -36,6 +37,7 @@ const rootReducer = combineReducers({
   expense: expenseReducer,
   recurringExpense: recurringExpenseReducer,
   dashboard: dashboardReducer,
+  tenantAuth: tenantAuthReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
