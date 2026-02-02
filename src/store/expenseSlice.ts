@@ -9,6 +9,7 @@ export interface Expense {
   description: string;
   amount: number;
   expenseDate: string;
+  slipUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   dormitory: {

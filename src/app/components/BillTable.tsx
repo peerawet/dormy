@@ -1,3 +1,5 @@
+import { useRef } from "react";
+
 interface BillTableProps {
   bills: Array<{
     id: number;
@@ -12,12 +14,82 @@ interface BillTableProps {
     rent: number;
     discount: number;
     total: number;
+    isPaid: boolean;
+    slipUrl?: string | null;
   }>;
   onEdit: (bill: any) => void;
   onDelete: (bill: any) => void;
+  onTogglePaid: (bill: any) => void;
+  onUploadSlip?: (bill: any, file: File) => void;
 }
 
-export default function BillTable({ bills, onEdit, onDelete }: BillTableProps) {
+function SlipCell({ bill, onUploadSlip }: { bill: any; onUploadSlip?: (bill: any, file: File) => void }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onUploadSlip) {
+      onUploadSlip(bill, file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  if (!onUploadSlip) {
+    return bill.slipUrl ? (
+      <a
+        href={bill.slipUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-green-600 hover:underline text-xs"
+      >
+        📎 ดูสลิป
+      </a>
+    ) : (
+      <span className="text-gray-400 text-xs">-</span>
+    );
+  }
+
+  return (
+    <>
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*,application/pdf"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      {bill.slipUrl ? (
+        <div className="flex items-center gap-1">
+          <a
+            href={bill.slipUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200"
+          >
+            📎 ดู
+          </a>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200"
+          >
+            🔄
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200"
+        >
+          📤 อัปโหลด
+        </button>
+      )}
+    </>
+  );
+}
+
+export default function BillTable({ bills, onEdit, onDelete, onTogglePaid, onUploadSlip }: BillTableProps) {
   return (
     <div className="overflow-x-auto overflow-hidden rounded-xl">
       <table className="w-full min-w-max text-left border border-blue-100 text-sm">
@@ -34,6 +106,8 @@ export default function BillTable({ bills, onEdit, onDelete }: BillTableProps) {
             <th className="p-3 font-semibold whitespace-nowrap bg-blue-200">
               รวม
             </th>
+            <th className="p-3 font-semibold whitespace-nowrap text-center">สถานะ</th>
+            <th className="p-3 font-semibold whitespace-nowrap text-center">สลิป</th>
             <th className="p-3 font-semibold whitespace-nowrap">Actions</th>
           </tr>
         </thead>
@@ -68,6 +142,21 @@ export default function BillTable({ bills, onEdit, onDelete }: BillTableProps) {
               </td>
               <td className="p-3 text-right font-bold text-blue-700 bg-blue-50">
                 {bill.total?.toLocaleString()}
+              </td>
+              <td className="p-3 text-center">
+                <button
+                  onClick={() => onTogglePaid(bill)}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                    bill.isPaid
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                      : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                  }`}
+                >
+                  {bill.isPaid ? '✓ ชำระแล้ว' : '○ ยังไม่ชำระ'}
+                </button>
+              </td>
+              <td className="p-3 text-center">
+                <SlipCell bill={bill} onUploadSlip={onUploadSlip} />
               </td>
               <td className="p-3 whitespace-nowrap">
                 <div className="flex gap-2">

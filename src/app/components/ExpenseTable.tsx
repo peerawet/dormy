@@ -1,9 +1,11 @@
+import { useRef } from "react";
 import { Expense } from "@/store/expenseSlice";
 
 interface ExpenseTableProps {
   expenses: Expense[];
   onEdit: (expense: Expense) => void;
   onDelete: (expense: Expense) => void;
+  onUploadSlip?: (expense: Expense, file: File) => void;
 }
 
 const expenseTypes = [
@@ -25,10 +27,77 @@ const expenseTypes = [
   { value: "other", label: "อื่นๆ", color: "gray", icon: "📝" },
 ];
 
+function SlipCell({ expense, onUploadSlip }: { expense: Expense; onUploadSlip?: (expense: Expense, file: File) => void }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onUploadSlip) {
+      onUploadSlip(expense, file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  if (!onUploadSlip) {
+    return expense.slipUrl ? (
+      <a
+        href={expense.slipUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-green-600 hover:underline text-xs"
+      >
+        📎 ดู
+      </a>
+    ) : (
+      <span className="text-gray-400 text-xs">-</span>
+    );
+  }
+
+  return (
+    <>
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*,application/pdf"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      {expense.slipUrl ? (
+        <div className="flex items-center gap-1">
+          <a
+            href={expense.slipUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200"
+          >
+            📎 ดู
+          </a>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200"
+          >
+            🔄
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200"
+        >
+          📤 อัปโหลด
+        </button>
+      )}
+    </>
+  );
+}
+
 export default function ExpenseTable({
   expenses,
   onEdit,
   onDelete,
+  onUploadSlip,
 }: ExpenseTableProps) {
   const getTypeConfig = (type: string) => {
     return (
@@ -62,6 +131,7 @@ export default function ExpenseTable({
             <th className="p-3 font-semibold whitespace-nowrap">หอพัก/ห้อง</th>
             <th className="p-3 font-semibold whitespace-nowrap">จำนวนเงิน</th>
             <th className="p-3 font-semibold whitespace-nowrap">วันที่</th>
+            <th className="p-3 font-semibold whitespace-nowrap text-center">ใบเสร็จ</th>
             <th className="p-3 font-semibold whitespace-nowrap">จัดการ</th>
           </tr>
         </thead>
@@ -119,6 +189,9 @@ export default function ExpenseTable({
                 </td>
                 <td className="p-3 whitespace-nowrap text-gray-900">
                   {formatDate(expense.expenseDate)}
+                </td>
+                <td className="p-3 text-center">
+                  <SlipCell expense={expense} onUploadSlip={onUploadSlip} />
                 </td>
                 <td className="p-3 whitespace-nowrap">
                   <div className="flex gap-2">

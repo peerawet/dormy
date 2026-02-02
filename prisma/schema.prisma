@@ -110,6 +110,8 @@ model Bill {
   rent      Int
   discount  Int      @default(0)
   total     Int
+  isPaid    Boolean  @default(false) // สถานะการชำระเงิน
+  slipUrl   String?  // URL ของสลิปโอนเงินใน S3
   meterWaterStart   Int?
   meterWaterEnd     Int?
   meterElectricStart Int?
@@ -129,6 +131,7 @@ model Expense {
   description  String    // รายละเอียดค่าใช้จ่าย
   amount       Float     // จำนวนเงิน
   expenseDate  DateTime  // วันที่เกิดค่าใช้จ่าย
+  slipUrl      String?   // URL ของสลิป/ใบเสร็จใน S3
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @default(now()) @updatedAt
   dormitory    Dormitory @relation(fields: [dormitoryId], references: [id])

@@ -1,3 +1,5 @@
+import { useRef } from "react";
+
 interface BillCardProps {
   bill: {
     id: number;
@@ -12,19 +14,36 @@ interface BillCardProps {
     common: number;
     other: number;
     discount: number;
+    isPaid: boolean;
+    slipUrl?: string | null;
   };
   onEdit: (bill: any) => void;
   onDelete: (bill: any) => void;
+  onTogglePaid: (bill: any) => void;
+  onUploadSlip?: (bill: any, file: File) => void;
 }
 
-export default function BillCard({ bill, onEdit, onDelete }: BillCardProps) {
+export default function BillCard({ bill, onEdit, onDelete, onTogglePaid, onUploadSlip }: BillCardProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onUploadSlip) {
+      onUploadSlip(bill, file);
+    }
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className={`bg-white border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow ${bill.isPaid ? 'border-green-200' : 'border-gray-200'}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-            <span className="text-blue-600 font-semibold">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${bill.isPaid ? 'bg-green-100' : 'bg-blue-100'}`}>
+            <span className={`font-semibold ${bill.isPaid ? 'text-green-600' : 'text-blue-600'}`}>
               {bill.tenant?.name?.charAt(0) || "?"}
             </span>
           </div>
@@ -38,10 +57,20 @@ export default function BillCard({ bill, onEdit, onDelete }: BillCardProps) {
           </div>
         </div>
         <div className="text-right">
-          <div className="text-lg font-bold text-blue-600">
+          <div className={`text-lg font-bold ${bill.isPaid ? 'text-green-600' : 'text-blue-600'}`}>
             ฿{bill.total?.toLocaleString()}
           </div>
-          <div className="text-xs text-gray-500">รวมทั้งหมด</div>
+          {/* Payment Status Badge */}
+          <button
+            onClick={() => onTogglePaid(bill)}
+            className={`mt-1 px-2 py-0.5 text-xs font-medium rounded-full transition-colors ${
+              bill.isPaid
+                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            {bill.isPaid ? '✓ ชำระแล้ว' : '○ ยังไม่ชำระ'}
+          </button>
         </div>
       </div>
 
@@ -89,8 +118,46 @@ export default function BillCard({ bill, onEdit, onDelete }: BillCardProps) {
         )}
       </div>
 
+      {/* Slip Section */}
+      {onUploadSlip && (
+        <div className="mb-4 pt-4 border-t border-gray-100">
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="image/*,application/pdf"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          {bill.slipUrl ? (
+            <div className="flex items-center gap-2">
+              <a
+                href={bill.slipUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm hover:bg-green-100 transition-colors flex items-center justify-center gap-1"
+              >
+                📎 ดูสลิป
+              </a>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100 transition-colors"
+              >
+                🔄
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full px-3 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm hover:bg-gray-100 transition-colors flex items-center justify-center gap-1 border border-dashed border-gray-300"
+            >
+              📤 อัปโหลดสลิป
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Actions */}
-      <div className="flex gap-2 pt-4 border-t border-gray-100">
+      <div className={`flex gap-2 pt-4 border-t border-gray-100 ${!onUploadSlip ? '' : ''}`}>
         <button
           className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100 transition-colors flex items-center justify-center gap-1"
           onClick={() => window.open(`/bill-receipt/${bill.id}`, "_blank")}

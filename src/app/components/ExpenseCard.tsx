@@ -1,9 +1,11 @@
+import { useRef } from "react";
 import { Expense } from "@/store/expenseSlice";
 
 interface ExpenseCardProps {
   expense: Expense;
   onEdit: () => void;
   onDelete: () => void;
+  onUploadSlip?: (expense: Expense, file: File) => void;
 }
 
 const expenseTypes = [
@@ -29,7 +31,10 @@ export default function ExpenseCard({
   expense,
   onEdit,
   onDelete,
+  onUploadSlip,
 }: ExpenseCardProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const getTypeConfig = (type: string) => {
     return (
       expenseTypes.find((t) => t.value === type) ||
@@ -50,6 +55,16 @@ export default function ExpenseCard({
       month: "short",
       day: "numeric",
     });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onUploadSlip) {
+      onUploadSlip(expense, file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const typeConfig = getTypeConfig(expense.type);
@@ -104,8 +119,46 @@ export default function ExpenseCard({
         </div>
       </div>
 
+      {/* Slip Section */}
+      {onUploadSlip && (
+        <div className="mb-4 pt-4 border-t border-gray-100">
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="image/*,application/pdf"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          {expense.slipUrl ? (
+            <div className="flex items-center gap-2">
+              <a
+                href={expense.slipUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm hover:bg-green-100 transition-colors flex items-center justify-center gap-1"
+              >
+                📎 ดูใบเสร็จ
+              </a>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100 transition-colors"
+              >
+                🔄
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full px-3 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm hover:bg-gray-100 transition-colors flex items-center justify-center gap-1 border border-dashed border-gray-300"
+            >
+              📤 อัปโหลดใบเสร็จ
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Action Buttons */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-4 border-t border-gray-100">
         <button
           className="flex-1 px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm hover:bg-yellow-200 transition-colors flex items-center justify-center gap-1"
           onClick={onEdit}

@@ -191,28 +191,48 @@ export default function ContractTab({ roomId }: { roomId: string }) {
           <div className="text-center text-gray-500">กำลังโหลด...</div>
         ) : contracts.length === 0 ? (
           <div className="text-center text-gray-500">ยังไม่มีสัญญาเช่า</div>
-        ) : viewMode === "card" ? (
-          <ContractCardList
-            contracts={contracts}
-            onEdit={(c) => {
-              setEditContract(c);
-              setModalOpen(true);
-            }}
-            onDelete={handleDeleteClick}
-            onPreview={handlePreview}
-            onReceipt={handleReceipt}
-          />
         ) : (
-          <ContractTable
-            contracts={contracts}
-            onEdit={(c) => {
-              setEditContract(c);
-              setModalOpen(true);
-            }}
-            onDelete={handleDeleteClick}
-            onPreview={handlePreview}
-            onReceipt={handleReceipt}
-          />
+          <>
+            {/* Mobile: Always show cards */}
+            <div className="lg:hidden">
+              <ContractCardList
+                contracts={contracts}
+                onEdit={(c) => {
+                  setEditContract(c);
+                  setModalOpen(true);
+                }}
+                onDelete={handleDeleteClick}
+                onPreview={handlePreview}
+                onReceipt={handleReceipt}
+              />
+            </div>
+            {/* Desktop: Use viewMode toggle */}
+            <div className="hidden lg:block">
+              {viewMode === "card" ? (
+                <ContractCardList
+                  contracts={contracts}
+                  onEdit={(c) => {
+                    setEditContract(c);
+                    setModalOpen(true);
+                  }}
+                  onDelete={handleDeleteClick}
+                  onPreview={handlePreview}
+                  onReceipt={handleReceipt}
+                />
+              ) : (
+                <ContractTable
+                  contracts={contracts}
+                  onEdit={(c) => {
+                    setEditContract(c);
+                    setModalOpen(true);
+                  }}
+                  onDelete={handleDeleteClick}
+                  onPreview={handlePreview}
+                  onReceipt={handleReceipt}
+                />
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>

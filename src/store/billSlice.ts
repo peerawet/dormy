@@ -16,6 +16,8 @@ interface Bill {
   rent: number;
   discount: number;
   total: number;
+  isPaid: boolean;
+  slipUrl?: string | null;
   meterWaterStart?: number | null;
   meterWaterEnd?: number | null;
   meterElectricStart?: number | null;
@@ -181,6 +183,99 @@ export const deleteBill = createAsyncThunk(
   }
 );
 
+export const toggleBillPaid = createAsyncThunk(
+  "bill/toggleBillPaid",
+  async (
+    { token, billId, isPaid }: { token: string; billId: number; isPaid: boolean },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await fetch(`/api/bill/${billId}/toggle-paid`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isPaid }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (!data.success) {
+        return rejectWithValue(data.message || "Failed to toggle bill status");
+      }
+      return data.bill;
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Network error");
+    }
+  }
+);
+
+export const uploadBillSlip = createAsyncThunk(
+  "bill/uploadBillSlip",
+  async (
+    { token, billId, file }: { token: string; billId: number; file: File },
+    { rejectWithValue }
+  ) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`/api/bill/${billId}/upload-slip`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (!data.success) {
+        return rejectWithValue(data.message || "Failed to upload slip");
+      }
+      return data.bill;
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Network error");
+    }
+  }
+);
+
+export const deleteBillSlip = createAsyncThunk(
+  "bill/deleteBillSlip",
+  async (
+    { token, billId }: { token: string; billId: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await fetch(`/api/bill/${billId}/upload-slip`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (!data.success) {
+        return rejectWithValue(data.message || "Failed to delete slip");
+      }
+      return data.bill;
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Network error");
+    }
+  }
+);
+
 const billSlice = createSlice({
   name: "bill",
   initialState,
@@ -273,6 +368,52 @@ const billSlice = createSlice({
       })
       .addCase(deleteBill.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // Toggle bill paid status
+    builder
+      .addCase(toggleBillPaid.pending, (state) => {
+        // Don't set loading to true for toggle to avoid flickering
+        state.error = null;
+      })
+      .addCase(toggleBillPaid.fulfilled, (state, action) => {
+        const index = state.bills.findIndex((b) => b.id === action.payload.id);
+        if (index !== -1) {
+          state.bills[index] = action.payload;
+        }
+      })
+      .addCase(toggleBillPaid.rejected, (state, action) => {
+        state.error = action.payload as string;
+      });
+
+    // Upload bill slip
+    builder
+      .addCase(uploadBillSlip.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(uploadBillSlip.fulfilled, (state, action) => {
+        const index = state.bills.findIndex((b) => b.id === action.payload.id);
+        if (index !== -1) {
+          state.bills[index] = action.payload;
+        }
+      })
+      .addCase(uploadBillSlip.rejected, (state, action) => {
+        state.error = action.payload as string;
+      });
+
+    // Delete bill slip
+    builder
+      .addCase(deleteBillSlip.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(deleteBillSlip.fulfilled, (state, action) => {
+        const index = state.bills.findIndex((b) => b.id === action.payload.id);
+        if (index !== -1) {
+          state.bills[index] = action.payload;
+        }
+      })
+      .addCase(deleteBillSlip.rejected, (state, action) => {
         state.error = action.payload as string;
       });
   },

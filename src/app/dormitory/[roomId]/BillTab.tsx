@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
+import { createPortal } from "react-dom";
 import BillModal from "@/app/components/BillModal";
 import ConfirmDeleteModal from "@/app/components/ConfirmDeleteModal";
 import ImportExcelModal from "@/app/components/ImportExcelModal";
@@ -13,6 +14,7 @@ import {
   addBill,
   updateBill,
   deleteBill,
+  toggleBillPaid,
   clearError,
   clearBills,
 } from "@/store/billSlice";
@@ -32,6 +34,15 @@ export default function BillTab({
   const [viewMode, setViewMode] = useState<"table" | "card">(
     typeof window !== "undefined" && window.innerWidth < 768 ? "card" : "table"
   );
+  const [alertModalOpen, setAlertModalOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertType, setAlertType] = useState<"success" | "error">("success");
+
+  const showAlert = (message: string, type: "success" | "error") => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setAlertModalOpen(true);
+  };
 
   const dispatch = useDispatch<AppDispatch>();
   const auth = useSelector((state: RootState) => state.auth);
@@ -53,7 +64,7 @@ export default function BillTab({
 
     // ตรวจสอบว่าเลือกผู้เช่าแล้ว
     if (!form.tenantId || form.tenantId === "") {
-      alert("กรุณาเลือกผู้เช่า");
+      showAlert("กรุณาเลือกผู้เช่า", "error");
       return;
     }
 
@@ -89,6 +100,7 @@ export default function BillTab({
             bill: payload,
           })
         ).unwrap();
+        showAlert("อัปเดตบิลสำเร็จ", "success");
       } else {
         await dispatch(
           addBill({
@@ -96,13 +108,14 @@ export default function BillTab({
             bill: payload,
           })
         ).unwrap();
+        showAlert("เพิ่มบิลสำเร็จ", "success");
       }
 
       setModalOpen(false);
       setEditBill(null);
     } catch (error: any) {
       console.error(`Error ${isEdit ? "updating" : "adding"} bill:`, error);
-      alert(`เกิดข้อผิดพลาด: ${error}`);
+      showAlert(`เกิดข้อผิดพลาด: ${error}`, "error");
     }
   }
 
@@ -124,15 +137,15 @@ export default function BillTab({
       setImportModalOpen(false);
 
       if (result.success) {
-        alert(result.message);
+        showAlert(result.message, "success");
         // Refresh bills data
         dispatch(fetchBills({ roomId, token: auth.token }));
       } else {
-        alert(`เกิดข้อผิดพลาด: ${result.message}`);
+        showAlert(`เกิดข้อผิดพลาด: ${result.message}`, "error");
       }
     } catch (error: any) {
       console.error("Error in bulk import:", error);
-      alert(`เกิดข้อผิดพลาดในการ Import: ${error.message || error}`);
+      showAlert(`เกิดข้อผิดพลาดในการ Import: ${error.message || error}`, "error");
       setImportModalOpen(false);
     }
   }
@@ -154,15 +167,61 @@ export default function BillTab({
 
       setConfirmModalOpen(false);
       setBillToDelete(null);
+      showAlert("ลบบิลสำเร็จ", "success");
     } catch (error: any) {
       console.error("Error deleting bill:", error);
-      alert(`เกิดข้อผิดพลาด: ${error}`);
+      showAlert(`เกิดข้อผิดพลาด: ${error}`, "error");
     }
   };
 
   const handleDeleteClick = (bill: any) => {
     setBillToDelete(bill);
     setConfirmModalOpen(true);
+  };
+
+  const handleTogglePaid = async (bill: any) => {
+    if (!auth.token) return;
+    try {
+      await dispatch(
+        toggleBillPaid({
+          token: auth.token,
+          billId: bill.id,
+          isPaid: !bill.isPaid,
+        })
+      ).unwrap();
+      showAlert(bill.isPaid ? "เปลี่ยนเป็นยังไม่ชำระ" : "บันทึกการชำระเงินสำเร็จ", "success");
+    } catch (error: any) {
+      console.error("Error toggling bill paid status:", error);
+      showAlert(`เกิดข้อผิดพลาด: ${error}`, "error");
+    }
+  };
+
+  const handleUploadSlip = async (bill: any, file: File) => {
+    if (!auth.token) return;
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`/api/bill/${bill.id}/upload-slip`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || "Failed to upload slip");
+      }
+
+      // Refresh bills to get updated data
+      dispatch(fetchBills({ roomId, token: auth.token }));
+      showAlert("อัปโหลดสลิปสำเร็จ", "success");
+    } catch (error: any) {
+      console.error("Error uploading slip:", error);
+      showAlert(`เกิดข้อผิดพลาด: ${error.message || error}`, "error");
+    }
   };
 
   useEffect(() => {
@@ -231,20 +290,74 @@ export default function BillTab({
           <div className="text-center text-red-600">{error}</div>
         ) : bills.length === 0 ? (
           <div className="text-center text-gray-500">ยังไม่มีบิล</div>
-        ) : viewMode === "card" ? (
-          <BillCardList
-            bills={bills}
-            onEdit={handleEditBill}
-            onDelete={handleDeleteClick}
-          />
         ) : (
-          <BillTable
-            bills={bills}
-            onEdit={handleEditBill}
-            onDelete={handleDeleteClick}
-          />
+          <>
+            {/* Mobile: Always show cards */}
+            <div className="lg:hidden">
+              <BillCardList
+                bills={bills}
+                onEdit={handleEditBill}
+                onDelete={handleDeleteClick}
+                onTogglePaid={handleTogglePaid}
+                onUploadSlip={handleUploadSlip}
+              />
+            </div>
+            {/* Desktop: Use viewMode toggle */}
+            <div className="hidden lg:block">
+              {viewMode === "card" ? (
+                <BillCardList
+                  bills={bills}
+                  onEdit={handleEditBill}
+                  onDelete={handleDeleteClick}
+                  onTogglePaid={handleTogglePaid}
+                  onUploadSlip={handleUploadSlip}
+                />
+              ) : (
+                <BillTable
+                  bills={bills}
+                  onEdit={handleEditBill}
+                  onDelete={handleDeleteClick}
+                  onTogglePaid={handleTogglePaid}
+                  onUploadSlip={handleUploadSlip}
+                />
+              )}
+            </div>
+          </>
         )}
       </div>
+
+      {/* Alert Modal */}
+      {alertModalOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">
+                    {alertType === "success" ? "✅" : "❌"}
+                  </span>
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    {alertType === "success" ? "สำเร็จ" : "เกิดข้อผิดพลาด"}
+                  </h3>
+                </div>
+                <p className="text-gray-600 mb-6">{alertMessage}</p>
+                <div className="flex justify-end">
+                  <button
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      alertType === "success"
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : "bg-red-600 text-white hover:bg-red-700"
+                    }`}
+                    onClick={() => setAlertModalOpen(false)}
+                  >
+                    ตกลง
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

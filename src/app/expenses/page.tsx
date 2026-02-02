@@ -21,6 +21,26 @@ import {
   Expense,
   ExpenseFormData,
 } from "@/store/expenseSlice";
+
+// Handle upload slip function (call API directly to avoid Redux serialization issue)
+const uploadExpenseSlip = async (token: string, expenseId: number, file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`/api/expense/${expenseId}/upload-slip`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.message || "Failed to upload slip");
+  }
+  return data.expense;
+};
 import { fetchDorms } from "@/store/dormSlice";
 
 export default function ExpensesPage() {
@@ -220,6 +240,26 @@ export default function ExpensesPage() {
     });
   };
 
+  const handleUploadSlip = async (expense: Expense, file: File) => {
+    if (!auth.token) return;
+    try {
+      await uploadExpenseSlip(auth.token, expense.id, file);
+      // Refresh data
+      dispatch(
+        fetchExpenses({
+          token: auth.token,
+          ...(selectedDormId && { dormitoryId: selectedDormId }),
+          ...(selectedType !== "all" && { type: selectedType }),
+          ...(selectedMonth && { month: selectedMonth }),
+          ...(selectedYear && { year: selectedYear }),
+        })
+      );
+      showAlert("อัปโหลดใบเสร็จสำเร็จ", "success");
+    } catch (error: any) {
+      showAlert(error.message || "เกิดข้อผิดพลาดในการอัปโหลด", "error");
+    }
+  };
+
   const renderCardView = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {filteredExpenses.map((expense) => (
@@ -231,6 +271,7 @@ export default function ExpensesPage() {
             setExpenseToDelete(expense);
             setConfirmModalOpen(true);
           }}
+          onUploadSlip={handleUploadSlip}
         />
       ))}
     </div>
@@ -244,6 +285,7 @@ export default function ExpensesPage() {
         setExpenseToDelete(expense);
         setConfirmModalOpen(true);
       }}
+      onUploadSlip={handleUploadSlip}
     />
   );
 
