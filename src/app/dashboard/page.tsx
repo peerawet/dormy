@@ -458,23 +458,24 @@ export default function DashboardPage() {
 
              {/* Recurring Expenses Table */}
              <div className="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <div className="p-4 sm:p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <span>🔄</span>
-                    ค่าใช้จ่ายประจำ
+                    <span className="truncate">ค่าใช้จ่ายประจำ</span>
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1 hidden sm:block">
                     คลิก Apply เพื่อสร้างค่าใช้จ่ายจากค่าใช้จ่ายประจำ
                   </p>
                 </div>
                 <button
                   onClick={() => handleOpenRecurringExpenseModal()}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                  className="shrink-0 px-3 py-2 sm:px-4 sm:py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base"
                 >
                   <span>+</span>
-                  <span>เพิ่มค่าใช้จ่ายประจำ</span>
+                  <span className="sm:hidden">เพิ่ม</span>
+                  <span className="hidden sm:inline">เพิ่มค่าใช้จ่ายประจำ</span>
                 </button>
               </div>
             </div>

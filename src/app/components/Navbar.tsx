@@ -517,7 +517,7 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {open && (
-          <div className="lg:hidden absolute top-full left-0 right-0 mobile-glass shadow-2xl border-t border-white/10 slide-down">
+          <div className="lg:hidden absolute top-full left-0 right-0 mobile-glass shadow-2xl border-t border-white/10 slide-down max-h-[calc(100vh-4rem)] overflow-y-auto">
             <div className="max-w-7xl mx-auto px-4 py-6">
               <div className="flex flex-col gap-2">
                 {auth.token ? (
