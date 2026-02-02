@@ -230,9 +230,9 @@ export default function RoomDetailPage() {
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-400/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
-      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto py-8 px-6">
+      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto py-4 px-3 lg:py-8 lg:px-6">
         {/* Header Section */}
-        <div className="mb-8">
+        <div className="mb-4 lg:mb-8">
           <div className="flex items-center gap-4 mb-6">
             <button
               onClick={() => router.back()}
@@ -249,10 +249,10 @@ export default function RoomDetailPage() {
         </div>
 
         {/* Room Information Card */}
-        <div className="mb-8">
+        <div className="mb-4 lg:mb-8">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 overflow-hidden">
             {/* Room Header */}
-            <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/80 backdrop-blur-sm px-8 py-6 border-b border-white/50">
+            <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/80 backdrop-blur-sm px-4 py-4 lg:px-8 lg:py-6 border-b border-white/50">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <div className="flex items-center gap-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-3xl text-white shadow-lg">
@@ -324,7 +324,7 @@ export default function RoomDetailPage() {
             </div>
 
             {/* Room Details Grid - Collapsible */}
-            <div className="p-8">
+            <div className="p-4 lg:p-8">
               <div
                 className="flex items-center justify-between cursor-pointer hover:bg-gray-50/50 -mx-2 px-2 py-2 rounded-lg transition-colors duration-200"
                 onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
@@ -510,7 +510,7 @@ export default function RoomDetailPage() {
 
             {/* Dormitory Information */}
             {dorm && (
-              <div className="bg-gradient-to-r from-gray-50/80 to-slate-50/80 backdrop-blur-sm px-8 py-6 border-t border-white/50">
+              <div className="bg-gradient-to-r from-gray-50/80 to-slate-50/80 backdrop-blur-sm px-4 py-4 lg:px-8 lg:py-6 border-t border-white/50">
                 <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                   <span>🏢</span>
                   <span>ข้อมูลหอพัก</span>
@@ -535,7 +535,7 @@ export default function RoomDetailPage() {
         {/* Tabs Section */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 overflow-hidden">
           {/* Tab Navigation */}
-          <div className="bg-gradient-to-r from-gray-50/80 to-slate-50/80 backdrop-blur-sm px-8 py-6 border-b border-white/50">
+          <div className="bg-gradient-to-r from-gray-50/80 to-slate-50/80 backdrop-blur-sm px-4 py-4 lg:px-8 lg:py-6 border-b border-white/50">
             <div className="flex gap-2">
               <button
                 className={`relative px-6 py-3 font-semibold rounded-xl transition-all duration-300 ${
@@ -573,7 +573,7 @@ export default function RoomDetailPage() {
           </div>
 
           {/* Tab Content */}
-          <div className="p-8">
+          <div className="p-2 lg:p-8">
             {activeTab === "bill" ? (
               <BillTab roomId={String(roomId)} room={room} />
             ) : (

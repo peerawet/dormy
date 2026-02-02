@@ -20,7 +20,7 @@ export default function ContractCard({
   const isExpired = today > endDate;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white border border-gray-200 rounded-xl p-3 lg:p-6 shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">

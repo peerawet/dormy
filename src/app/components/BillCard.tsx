@@ -38,7 +38,7 @@ export default function BillCard({ bill, onEdit, onDelete, onTogglePaid, onUploa
   };
 
   return (
-    <div className={`bg-white border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow ${bill.isPaid ? 'border-green-200' : 'border-gray-200'}`}>
+    <div className={`bg-white border rounded-xl p-3 lg:p-6 shadow-sm hover:shadow-md transition-shadow ${bill.isPaid ? 'border-green-200' : 'border-gray-200'}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">

@@ -153,7 +153,7 @@ export default function ContractTab({ roomId }: { roomId: string }) {
   }, [auth.token, roomId, dispatch]);
 
   return (
-    <div className="bg-white rounded-xl shadow-xl p-0 overflow-visible">
+    <div className="bg-white rounded-xl lg:shadow-xl p-0 overflow-visible">
       <ContractHeader
         viewMode={viewMode}
         onViewModeChange={setViewMode}
@@ -186,7 +186,7 @@ export default function ContractTab({ roomId }: { roomId: string }) {
         text={`คุณแน่ใจหรือไม่ที่จะลบสัญญาเช่าของ ${contractToDelete?.tenant?.name}?`}
       />
 
-      <div className="bg-gray-50 px-6 py-6">
+      <div className="bg-gray-50 px-2 py-3 lg:px-6 lg:py-6">
         {loading ? (
           <div className="text-center text-gray-500">กำลังโหลด...</div>
         ) : contracts.length === 0 ? (
