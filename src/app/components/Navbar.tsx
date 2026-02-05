@@ -1,9 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
 import { logout } from "@/store/authSlice";
-import { fetchDorms } from "@/store/dormSlice";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import ProfileModal from "./ProfileModal";
@@ -35,12 +34,8 @@ export default function Navbar() {
     setUserDropdownOpen(false);
   };
 
-  // Fetch dormitories using Redux
-  useEffect(() => {
-    if (auth.token && dormitories.length === 0) {
-      dispatch(fetchDorms(auth.token));
-    }
-  }, [auth.token, dispatch, dormitories.length]);
+  // Dormitories are fetched by the pages that need them (e.g. DormitoryPage, Dashboard)
+  // Navbar just reads from the Redux store
 
   // Check if current path matches room
   const isCurrentRoom = (roomId: number) => {

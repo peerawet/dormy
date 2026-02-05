@@ -61,47 +61,6 @@ export default function DormitoryPage() {
     setModalRoomDormId(null);
   }
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center shadow-xl border border-white/50">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-6"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">
-            กำลังโหลดข้อมูลหอพัก
-          </h2>
-          <p className="text-gray-600">โปรดรอสักครู่...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center shadow-xl border border-white/50 max-w-md">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-red-600 mb-2">
-            เกิดข้อผิดพลาด
-          </h2>
-          <p className="text-red-600 mb-6">{error}</p>
-          <button
-            onClick={() => {
-              if (auth.token) {
-                dispatch(fetchDorms(auth.token));
-              }
-            }}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
-          >
-            <span>🔄</span>
-            <span>ลองใหม่</span>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col">
@@ -114,40 +73,77 @@ export default function DormitoryPage() {
         </div>
 
         <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto py-8 px-6 space-y-10">
-          {/* Header */}
-          <DormHeader onAddDorm={openAddDormModal} />
-
-          {/* Stats */}
-          {dorms.length > 0 && <DormStats dorms={dorms} />}
-
-          {/* Content */}
-          <div className="mt-8">
-            {dorms.length === 0 ? (
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-12 text-center border border-white/50 shadow-lg">
-                <div className="text-8xl mb-6 animate-bounce">🏠</div>
-                <h3 className="text-2xl font-bold text-gray-700 mb-3">
-                  ยังไม่มีหอพัก
-                </h3>
-                <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                  เริ่มต้นการจัดการหอพักของคุณด้วยการเพิ่มหอพักแรก
-                </p>
+          {/* Loading state */}
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center shadow-xl border border-white/50">
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-6"></div>
+                <h2 className="text-xl font-semibold text-gray-700 mb-2">
+                  กำลังโหลดข้อมูลหอพัก
+                </h2>
+                <p className="text-gray-600">โปรดรอสักครู่...</p>
+              </div>
+            </div>
+          ) : error ? (
+            /* Error state */
+            <div className="flex items-center justify-center py-20">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center shadow-xl border border-white/50 max-w-md">
+                <div className="text-6xl mb-4">⚠️</div>
+                <h2 className="text-2xl font-bold text-red-600 mb-2">
+                  เกิดข้อผิดพลาด
+                </h2>
+                <p className="text-red-600 mb-6">{error}</p>
                 <button
-                  onClick={openAddDormModal}
-                  className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                  onClick={() => {
+                    if (auth.token) {
+                      dispatch(fetchDorms(auth.token));
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
                 >
-                  <span className="text-xl">🏠</span>
-                  <span>เพิ่มหอพักแรก</span>
+                  <span>🔄</span>
+                  <span>ลองใหม่</span>
                 </button>
               </div>
-            ) : (
-              <DormCardList
-                dorms={dorms}
-                onEditDorm={openEditDormModal}
-                onAddRoom={openAddRoomModal}
-                onEditRoom={openEditRoomModal}
-              />
-            )}
-          </div>
+            </div>
+          ) : (
+            <>
+              {/* Header */}
+              <DormHeader onAddDorm={openAddDormModal} />
+
+              {/* Stats */}
+              {dorms.length > 0 && <DormStats dorms={dorms} />}
+
+              {/* Content */}
+              <div className="mt-8">
+                {dorms.length === 0 ? (
+                  <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-12 text-center border border-white/50 shadow-lg">
+                    <div className="text-8xl mb-6 animate-bounce">🏠</div>
+                    <h3 className="text-2xl font-bold text-gray-700 mb-3">
+                      ยังไม่มีหอพัก
+                    </h3>
+                    <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                      เริ่มต้นการจัดการหอพักของคุณด้วยการเพิ่มหอพักแรก
+                    </p>
+                    <button
+                      onClick={openAddDormModal}
+                      className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                    >
+                      <span className="text-xl">🏠</span>
+                      <span>เพิ่มหอพักแรก</span>
+                    </button>
+                  </div>
+                ) : (
+                  <DormCardList
+                    dorms={dorms}
+                    onEditDorm={openEditDormModal}
+                    onAddRoom={openAddRoomModal}
+                    onEditRoom={openEditRoomModal}
+                  />
+                )}
+              </div>
+            </>
+          )}
         </main>
 
         {/* Modals */}
