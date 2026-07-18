@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const dispatch = useDispatch();
   const router = useRouter();
   const { loading, token } = useSelector((state: RootState) => state.auth);
@@ -22,6 +23,14 @@ export default function LoginPage() {
       router.replace("/dashboard");
     }
   }, [token, router]);
+
+  // อ่านผ่าน window.location แทน useSearchParams เพื่อเลี่ยง Suspense boundary
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("expired") === "1") {
+      setSessionExpired(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +150,16 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            {/* Session Expired Message */}
+            {sessionExpired && !error && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+                <span className="text-amber-500">⏰</span>
+                <span className="text-amber-700 text-sm">
+                  เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง
+                </span>
+              </div>
+            )}
 
             {/* Error Message */}
             {error && (

@@ -3,11 +3,15 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
-import { loginTenantWithLinkCode } from "@/store/tenantAuthSlice";
+import {
+  loginTenantWithLinkCode,
+  clearTenantError,
+} from "@/store/tenantAuthSlice";
 import Link from "next/link";
 
 export default function TenantLoginPage() {
   const [linkCode, setLinkCode] = useState("");
+  const [sessionExpired, setSessionExpired] = useState(false);
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { tenant, loading, error } = useSelector(
@@ -22,15 +26,22 @@ export default function TenantLoginPage() {
       setLinkCode(codeFromUrl);
     }
 
+    // ถูก redirect มาเพราะ session หมดอายุ — เคลียร์ error เก่าที่ค้างจาก token หมดอายุ
+    if (searchParams.get("expired") === "1") {
+      setSessionExpired(true);
+      dispatch(clearTenantError());
+    }
+
     // If already logged in, redirect to tenant portal
     if (tenant) {
       router.push("/tenant");
     }
-  }, [tenant, router, searchParams]);
+  }, [tenant, router, searchParams, dispatch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!linkCode.trim()) return;
+    setSessionExpired(false);
 
     try {
       await dispatch(
@@ -67,6 +78,15 @@ export default function TenantLoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-8">
+            {sessionExpired && !error && (
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">⏰</span>
+                  <span>เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง</span>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
                 <div className="flex items-center gap-2">

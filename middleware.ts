@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
       console.error("[Middleware] Token verification failed:", error);
       // Clear the invalid cookie
       const response = NextResponse.redirect(
-        new URL("/tenant-login", request.url)
+        new URL("/tenant-login?expired=1", request.url)
       );
       response.cookies.delete("tenant_token");
       return response;
